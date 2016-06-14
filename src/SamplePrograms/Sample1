@@ -1,0 +1,41 @@
+program Sample;
+
+    Function boolean f1(integer: a, boolean: b)
+        Begin
+        integer x = 0;
+        boolean y = false;
+        if a == x
+            Begin
+            y = b;
+            End;
+        integer[3] c = {1, 2, 3};
+        while c[1] < c[2] do
+            begin
+            c[1] = c[1] + 1;
+            end;
+        return y;
+        End
+
+    Function integer f2()
+        Begin
+        integer a = 3;
+        integer b = 4;
+        if f1(a,b) then
+            Begin
+            return 1;
+            End
+        else
+            Begin
+            return 0;
+            End;
+        End
+
+    Begin
+    f2();
+    End;
+
+    # this is a line comment
+    
+    /#
+        this is a multi line comment
+    #/
