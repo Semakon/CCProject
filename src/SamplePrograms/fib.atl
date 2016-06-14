@@ -1,0 +1,17 @@
+program fib;
+
+    Function integer fib(integer: n) {
+        integer res = 0;
+        if n <= 1 then {
+            res = 1;
+        } else {
+            res = fib(n - 2) + fib(n - 1);
+        };
+        return res;
+    }
+
+{
+    in("Argument? ", arg);
+    result = fib(arg);
+    out("Result: ", result);
+}

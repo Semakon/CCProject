@@ -1,9 +1,0 @@
-program Sample;
-
-Begin
-    integer a = 0;
-    integer b = 0;
-    in("a?", a);
-    in("b?", b);
-    return (a + b);
-End;

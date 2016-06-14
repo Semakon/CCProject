@@ -1,0 +1,18 @@
+program prime;
+
+{
+    in("Number? ", x);
+    integer i;
+    i = 2;
+    boolean stop;
+    stop = false;
+    while not stop && i*i < x do {
+        stop = i * (x / i) = x;
+        i = i + 1;
+    };
+    if stop then {
+        out("Divisor: ", i - 1);
+    } else {
+        out("Is prime ", stop);
+    };
+}

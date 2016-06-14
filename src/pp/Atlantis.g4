@@ -11,12 +11,13 @@ pars    : LPAR type COLON VAR
           (COMMA type COLON VAR)* RPAR
         ;
 
-// blocks
-block   : BEGIN (stat SEMI)+ END
+// Block with statements
+block   : LBRACE (stat SEMI)+ RBRACE
         ;
 
 // Statements
-stat    : VAR ASS expr                  #assStat
+stat    : type VAR                      #declStat
+        | VAR ASS expr                  #assStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
@@ -66,8 +67,6 @@ type    : BOOL | INT
 // Reserved keywords
 PROG:       P R O G R A M;
 FUNC:       F U N C T I O N;
-BEGIN:      B E G I N;
-END:        E N D;
 BOOLEAN:    B O O L E A N;
 INT:        I N T E G E R;
 WHILE:      W H I L E;
