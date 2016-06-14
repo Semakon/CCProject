@@ -1,13 +1,7 @@
-grammar Grammar;
-
+grammar Atlantis;
 
 // Actual program
-program : PROG VAR SEMI function* block
-        ;
-
-// Function
-function: FUNC type VAR
-            LPAR (type COLON VAR)* RPAR block
+program : PROG VAR SEMI block
         ;
 
 // blocks
@@ -15,12 +9,13 @@ block   : BEGIN (stat SEMI)+ END
         ;
 
 // Statements
-stat    : VAR ASS expr                 #assStat
+stat    : VAR ASS expr                  #assStat
         | IF expr THEN block
-            (ELSE block)?              #ifStat
-        | WHILE expr DO block          #whileStat
-        | IN LPAR STR COMMA VAR RPAR   #inStat
-        | OUT LPAR STR COMMA VAR RPAR  #outStat
+            (ELSE block)?               #ifStat
+        | WHILE expr DO block           #whileStat
+        | RETURN expr                   #retStat
+        | IN LPAR STR COMMA VAR RPAR    #inStat
+        | OUT LPAR STR COMMA VAR RPAR   #outStat
         ;
 
 // Expressions
@@ -73,6 +68,7 @@ FALSE:      F A L S E;
 NOT:        N O T;
 IN:         I N;
 OUT:        O U T;
+RETURN:     R E T U R N;
 
 // Symbols
 ASS:        '=';
