@@ -1,7 +1,14 @@
 grammar Atlantis;
 
 // Actual program
-program : PROG VAR SEMI block
+program : PROG VAR SEMI function* block
+        ;
+
+function: FUNC type VAR pars? block SEMI
+        ;
+
+pars    : LPAR type COLON VAR
+          (COMMA type COLON VAR)* RPAR
         ;
 
 // blocks
@@ -11,11 +18,12 @@ block   : BEGIN (stat SEMI)+ END
 // Statements
 stat    : VAR ASS expr                  #assStat
         | IF expr THEN block
-            (ELSE block)?               #ifStat
+          (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
         | RETURN expr                   #retStat
         | IN LPAR STR COMMA VAR RPAR    #inStat
-        | OUT LPAR STR COMMA VAR RPAR   #outStat
+        | OUT LPAR STR COMMA expr RPAR  #outStat
+        | VAR args?                     #callStat
         ;
 
 // Expressions
@@ -26,9 +34,13 @@ expr    : not expr          #notExpr
         | expr compOp expr  #compExpr
         | expr boolOp expr  #boolExpr
         | LPAR expr RPAR    #parExpr
+        | VAR args          #callExpr
         | VAR               #varExpr
         | NUM               #numExpr
         | BOOL              #boolExr
+        ;
+
+args    : LPAR (expr (COMMA expr)*)? RPAR
         ;
 
 // Negation
