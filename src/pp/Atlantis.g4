@@ -24,7 +24,7 @@ stat    : type VAR                      #declStat
         | RETURN expr                   #retStat
         | IN LPAR STR COMMA VAR RPAR    #inStat
         | OUT LPAR STR COMMA expr RPAR  #outStat
-        | VAR args?                     #callStat
+        | VAR args                      #callStat
         ;
 
 // Expressions
@@ -33,12 +33,12 @@ expr    : not expr          #notExpr
         | expr multOp expr  #multExpr
         | expr plusOp expr  #plusExpr
         | expr compOp expr  #compExpr
-        | expr boolOp expr  #boolExpr
+        | expr boolOp expr  #boolOpExpr
         | LPAR expr RPAR    #parExpr
         | VAR args          #callExpr
         | VAR               #varExpr
         | NUM               #numExpr
-        | BOOL              #boolExr
+        | BOOL              #boolExpr
         ;
 
 args    : LPAR (expr (COMMA expr)*)? RPAR
