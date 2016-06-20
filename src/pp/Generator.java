@@ -1,10 +1,12 @@
 package pp;
 
+import org.antlr.v4.runtime.atn.SemanticContext.Operator;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
 import com.sun.org.apache.xpath.internal.compiler.OpCodes;
 
+import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
 import pp.AtlantisParser.*;
 
 
@@ -91,7 +93,7 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Operand operand1 = reg(ctx.expr());
 		Operand offset = offset(ctx.VAR());
 		
-		emit(OpCode.Store, operand1, something, offset);
+		emit(OpCode.store, operand1, something, offset);
 		return result;
 	}
 	
@@ -102,7 +104,110 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		setReg(ctx, reg);
 		
 		if (ctx.ELSE() != null) {
-			emit(OpCode.)
+			emit(OpCode.branch, reg, val);
+			visit(ctx.block(0)).setLabel();//label
+			emit(OpCode.jump, endreg)
+			visit(ctx.block(1)).setLabel();
+		} else {
+			emit(OpCode.cbr, reg, toEnd);
+			visit(ctx.block(0)).setLabel();
 		}
+		
+		return result;
+	}
+	
+	@Override
+	public Op visitWhileStat(WhileStatContext ctx) {
+		Op result = visit(ctx.expr());
+		Reg reg = reg(ctx.expr());
+		setReg(ctx, reg);
+		emit(OpCode.branch, reg, /*args*/);
+		visit(ctx.block()).setLabel();
+		emit(OpCode.jump, whileLabel);
+		emit(endLabel, OpCode.nop);
+		
+		return result;
+	}
+	
+	@Override
+	public Op visitInStat(InStatContext ctx) {
+		Reg target = reg(ctx.target());
+		String text - ctx.STR().getText().replaceAll("\"", "");
+		
+		Op result = emit(OpCode.write, new Str(text), target);
+		emit(OpCode.store, /* args*/);
+		return result;
+	}
+	
+	@Override
+	public Op visitOutStat(OutStatContext ctx) {
+		Op result = visit(ctx.expr());
+		String text = ctx.STR().getText().replaceAll("\"", "");
+		emit(OpCode.read, new Str(text), reg(ctx.expr()));
+		return result;
+	}
+	
+	@Override
+	public Op visitNotExpr(NotExprContext ctx) {
+		Op result = visit(ctx.expr());
+		
+		Operand operand1 = reg(ctx.expr());
+		Operand operand2;
+		Operand target = reg(ctx);
+		OpCode opCode;
+		
+		if (ctx.not().MINUS() == null) {
+			operand2 = TRUE_VALUE;
+			opCode = OpCode.xor;
+			emit(/*revert value*/);
+		} else {
+			operand2 = new Num(0);
+			opCode = OpCode.compute;
+			emit(opCode, minus, operand1, operand2, operand1);
+		}
+		return result;
+	}
+	
+	@Override
+	public Op visitHatExpr(HatExprContext ctx) {
+		return null;
+	}
+	
+	@Override
+	public Op visitMultExpr(MultExprContext ctx) {
+		Op result = visit(ctx.expr(0));
+		visit(ctx.expr(1));
+		
+		Operand operand1 = reg(ctx.expr(0));
+		Operand operand2 = reg(ctx.expr(1));
+		Operand target = reg(ctx);
+		Operator op;
+		
+		if (ctx.multOp().MULT() == null) {
+			op = OpCode.div;
+		} else {
+			op = OpCode.mult;
+		}
+		
+		emit(OpCode.compute, op, operand1, operand2, target);
+		return result;
+	}
+	
+	@Override
+	public Op visitPlusExpr(PlusExprContext ctx) {
+		Op result = visit(ctx.expr(0));
+		visit(ctx.expr(1));
+		
+		Operand op1 = reg(ctx.expr(0));
+		Operand op2 = reg(ctx.expr(2));
+		Operand target = reg(ctx);
+		Oper op;
+		
+		if (ctx.plusOp().PLUS() == null) {
+			op = Oper.sub;
+		} else {
+			op = Oper.add;
+		}
+		emit(OpCode.compute, op, op1, op2, target);
 	}
 }
