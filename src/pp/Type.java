@@ -14,6 +14,13 @@ abstract public class Type {
     /** Singleton instance of String */
     public static final Type STR = new Str();
 
+    /** Singleton instance of Array of Integers */
+    public static final Type INT_ARR = new Array(Type.INT);
+    /** Singleton instance of Array of Booleans */
+    public static final Type BOOL_ARR = new Array(Type.BOOL);
+    /** Singleton instance of Array of Strings */
+    public static final Type STR_ARR = new Array(Type.STR);
+
     public Type(TypeKind kind) {
         this.kind = kind;
     }
@@ -23,6 +30,8 @@ abstract public class Type {
     }
 
     abstract public int getSize();
+
+    abstract public boolean sameType(Object obj);
 
     /** Representation of the Boolean type. */
     static public class Bool extends Type {
@@ -34,6 +43,11 @@ abstract public class Type {
         @Override
         public int getSize() {
             return getKind().getSize();
+        }
+
+        @Override
+        public boolean sameType(Object obj) {
+            return this == obj || obj instanceof Bool;
         }
 
         @Override
@@ -56,6 +70,11 @@ abstract public class Type {
         }
 
         @Override
+        public boolean sameType(Object obj) {
+            return this == obj || obj instanceof Int;
+        }
+
+        @Override
         public String toString() {
             return "Integer";
         }
@@ -75,6 +94,11 @@ abstract public class Type {
         }
 
         @Override
+        public boolean sameType(Object obj) {
+            return this == obj || obj instanceof Str;
+        }
+
+        @Override
         public String toString() {
             return "String";
         }
@@ -87,7 +111,14 @@ abstract public class Type {
         private final int upper;
         private final Type elemType;
 
-        private Array(int lower, int upper, Type elemType) {
+        public Array(Type elemType) {
+            super(TypeKind.ARRAY);
+            this.lower = 0;
+            this.upper = 1;
+            this.elemType = elemType;
+        }
+
+        public Array(int lower, int upper, Type elemType) {
             super(TypeKind.ARRAY);
             assert upper >= lower;
             this.lower = lower;
@@ -117,8 +148,18 @@ abstract public class Type {
 
         @Override
         public String toString() {
-            return "Array [" + this.lower + ".." + this.upper + "] of "
-                    + this.elemType;
+            return "Array [" + this.lower + ".." + this.upper + "] of " + this.elemType;
+        }
+
+        public boolean sameType(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof Array)) {
+                return false;
+            }
+            Array other = (Array) obj;
+            return this.elemType.equals(other.elemType);
         }
 
         @Override

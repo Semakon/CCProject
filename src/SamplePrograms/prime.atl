@@ -2,9 +2,7 @@ program prime;
 
 {
     in("Number? ", x);
-    integer i;
     i = 2;
-    boolean stop;
     stop = false;
     while not stop && i*i < x do {
         stop = i * (x / i) = x;

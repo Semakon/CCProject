@@ -1,14 +1,7 @@
 grammar Atlantis;
 
 // Actual program
-program : PROG VAR SEMI function* block
-        ;
-
-function: FUNC type VAR pars? block SEMI
-        ;
-
-pars    : LPAR type COLON VAR
-          (COMMA type COLON VAR)* RPAR
+program : PROG VAR SEMI block
         ;
 
 // Block with statements
@@ -16,32 +9,32 @@ block   : LBRACE (stat SEMI)+ RBRACE
         ;
 
 // Statements
-stat    : type VAR                      #declStat
-        | VAR ASS expr                  #assStat
+stat    : type? target ASS expr         #assStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
-        | RETURN expr                   #retStat
         | IN LPAR STR COMMA VAR RPAR    #inStat
         | OUT LPAR STR COMMA expr RPAR  #outStat
-        | VAR args                      #callStat
+        ;
+
+target  : VAR               #varTarget
+        | VAR LSQ expr RSQ  #arrayTarget
         ;
 
 // Expressions
-expr    : not expr          #notExpr
-        | expr HAT expr     #hatExpr
-        | expr multOp expr  #multExpr
-        | expr plusOp expr  #plusExpr
-        | expr compOp expr  #compExpr
-        | expr boolOp expr  #boolOpExpr
-        | LPAR expr RPAR    #parExpr
-        | VAR args          #callExpr
-        | VAR               #varExpr
-        | NUM               #numExpr
-        | BOOL              #boolExpr
-        ;
-
-args    : LPAR (expr (COMMA expr)*)? RPAR
+expr    : not expr                      #notExpr
+        | expr HAT expr                 #hatExpr
+        | expr multOp expr              #multExpr
+        | expr plusOp expr              #plusExpr
+        | expr compOp expr              #compExpr
+        | expr boolOp expr              #boolOpExpr
+        | LPAR expr RPAR                #parExpr
+        | VAR                           #varExpr
+        | NUM                           #numExpr
+        | STR                           #strExpr
+        | BOOL                          #boolExpr
+        | VAR LSQ expr RSQ              #indexExpr
+        | LSQ (expr (COMMA expr)*)? RSQ #arrayExpr
         ;
 
 // Negation
@@ -56,12 +49,14 @@ plusOp  : PLUS | MINUS;
 // Comparative operator
 compOp  : EQ | NE | GT | GE | LT | LE;
 
-// Boolean operator TODO: add xor ?
+// Boolean operator
 boolOp  : AND | OR;
 
 // Data types
-type    : BOOL | INT
-        | type RBRACK NUM LBRACK
+type    : BOOLEAN               #boolType
+        | INT                   #intType
+        | STRING                #stringType
+        | type LSQ NUM RSQ      #arrayType
         ;
 
 // Reserved keywords
@@ -69,6 +64,7 @@ PROG:       P R O G R A M;
 FUNC:       F U N C T I O N;
 BOOLEAN:    B O O L E A N;
 INT:        I N T E G E R;
+STRING:     S T R I N G;
 WHILE:      W H I L E;
 DO:         D O;
 IF:         I F;
@@ -97,8 +93,8 @@ DQUOTE:     '"';
 SQUOTE:     '\'';
 LBRACE:     '{';
 RBRACE:     '}';
-LBRACK:     '[';
-RBRACK:     ']';
+LSQ:        '[';
+RSQ:        ']';
 LPAR:       '(';
 RPAR:       ')';
 PLUS:       '+';
