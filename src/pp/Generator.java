@@ -14,7 +14,7 @@ import pp.AtlantisParser.*;
  * Class to generate SprIl code for Atlantis.
  * @author Kevin Booijink
  */
-public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of operation*/> {
+public class Generator extends AtlantisBaseVisitor<Op> {
 
 
 	/** The outcome of the checker phase. */
@@ -36,7 +36,6 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 	}
 	
 	/** Constructs an operation from the parameters
-	 * and adds it to the program under construction
 	 * @param opCode
 	 * @param args
 	 * @return
@@ -91,7 +90,7 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Operand operand1 = reg(ctx.expr());
 		Operand offset = offset(ctx.VAR());
 		
-		emit(OpCode.store, operand1, something, offset);
+		emit("store", operand1, something, offset);
 		return result;
 	}
 	
@@ -102,12 +101,12 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		setReg(ctx, reg);
 		
 		if (ctx.ELSE() != null) {
-			emit(OpCode.branch, reg, val);
+			emit("branch", reg, val);
 			visit(ctx.block(0)).setLabel();//label
-			emit(OpCode.jump, endreg)
+			emit("jump", endreg)
 			visit(ctx.block(1)).setLabel();
 		} else {
-			emit(OpCode.cbr, reg, toEnd);
+			emit("branch", reg, toEnd);
 			visit(ctx.block(0)).setLabel();
 		}
 		
@@ -119,9 +118,9 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Op result = visit(ctx.expr());
 		Reg reg = reg(ctx.expr());
 		setReg(ctx, reg);
-		emit(OpCode.branch, reg, /*args*/);
+		emit("branch", reg, /*args*/);
 		visit(ctx.block()).setLabel();
-		emit(OpCode.jump, whileLabel);
+		emit("jump", whileLabel);
 		emit(endLabel, OpCode.nop);
 		
 		return result;
@@ -133,7 +132,7 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		String text - ctx.STR().getText().replaceAll("\"", "");
 		
 		Op result = emit(OpCode.write, new Str(text), target);
-		emit(OpCode.store, /* args*/);
+		emit("store", /* args*/);
 		return result;
 	}
 	
@@ -141,7 +140,7 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 	public Op visitOutStat(OutStatContext ctx) {
 		Op result = visit(ctx.expr());
 		String text = ctx.STR().getText().replaceAll("\"", "");
-		emit(OpCode.read, new Str(text), reg(ctx.expr()));
+		emit("read", new Str(text), reg(ctx.expr()));
 		return result;
 	}
 	
@@ -152,16 +151,16 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Operand operand1 = reg(ctx.expr());
 		Operand operand2;
 		Operand target = reg(ctx);
-		OpCode opCode;
+		String opCode;
 		
 		if (ctx.not().MINUS() == null) {
 			operand2 = TRUE_VALUE;
-			opCode = OpCode.xor;
+			opCode = "doRevert";
 			emit(/*revert value*/);
 		} else {
 			operand2 = new Num(0);
-			opCode = OpCode.compute;
-			emit(opCode, minus, operand1, operand2, operand1);
+			opCode = "compute";
+			emit(opCode, "Sub", operand1, operand2, operand1);
 		}
 		return result;
 	}
@@ -179,15 +178,15 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Operand operand1 = reg(ctx.expr(0));
 		Operand operand2 = reg(ctx.expr(1));
 		Operand target = reg(ctx);
-		Operator op;
+		String op;
 		
 		if (ctx.multOp().MULT() == null) {
-			op = OpCode.div;
+			op = "Div";
 		} else {
-			op = OpCode.mult;
+			op = "Mul";
 		}
 		
-		emit(OpCode.compute, op, operand1, operand2, target);
+		emit("compute, op, operand1, operand2, target);
 		return result;
 	}
 	
@@ -199,14 +198,14 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Operand op1 = reg(ctx.expr(0));
 		Operand op2 = reg(ctx.expr(2));
 		Operand target = reg(ctx);
-		Oper op;
+		String op;
 		
 		if (ctx.plusOp().PLUS() == null) {
-			op = Oper.sub;
+			op = "Sub";
 		} else {
-			op = Oper.add;
+			op = "Add";
 		}
-		emit(OpCode.compute, op, op1, op2, target);
+		emit("compute", op, op1, op2, target);
 	}
 	
 	@Override
@@ -219,20 +218,20 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Oper op;
 		
 		if (ctx.compOp().getText().equalsIgnoreCase("=")) {
-			op = Oper.cmp_EQ;
+			op = "Equal";
 		} else if (ctx.compOp().getText().equalsIgnoreCase(">=")) {
-			op = Oper.cmp_GE;
+			op = "GtE";
 		} else if (ctx.compOp().getText().equalsIgnoreCase(">")) {
-			op = Oper.cmp_GT;
+			op = "Gt";
 		} else if (ctx.compOp().getText().equalsIgnoreCase("<=")) {
-			op = Oper.cmp_LE;
+			op = "LtE";
 		} else if (ctx.compOp().getText().equalsIgnoreCase("<")) {
-			op = Oper.cmp_LT;
+			op = "Lt";
 		} else if (ctx.compOp().getText().equalsIgnoreCase("<>")) {
-			op = Oper.cmp_NE;
+			op = "NEq";
 		}
 		
-		emit(OpCode.compute, op, op1, op2, target);
+		emit("compute", op, op1, op2, target);
 		return result;
 	}
 	
@@ -244,14 +243,14 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 		Operand op1 = reg(ctx.expr(0));
 		Operand op2 = reg(ctx.expr(1));
 		Reg target = reg(ctx);
-		Oper op;
+		String op;
 		
 		if (ctx.boolOp().AND() != null) {
-			op = Oper.and;
+			op = "And";
 		} else {
-			op = Oper.or;
+			op = "Or";
 		}
-		emit(OpCode.compute, op, op1, op2, target);
+		emit("compute", op, op1, op2, target);
 		return result;
 	}
 	
@@ -269,21 +268,21 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 	
 	@Override
 	public Op visitVarExpr(VarExprContext ctx) {
-		return emit(OpCode.load, reg(ctx));
+		return emit("load", reg(ctx));
 	}
 	
 	@Override
 	public Op visitNumExpr(NumExprContext ctx) {
 		int value = Integer.parseInt(ctx.getText());
-		return emit(OpCode.load, value/*registers*/);
+		return emit("load", value/*registers*/);
 	}
 	
 	@Override
 	public Op visitBoolExr(BoolExrContext ctx) {
 		if (ctx.BOOL().getSymbol().equals(AtlantisLexer.TRUE)) {
-			return emit(OpCode.load, TRUE_VALUE, reg(ctx));
+			return emit("load", TRUE_VALUE, reg(ctx));
 		} else {
-			return emit(OpCode.load, FALSE_VALUE, reg(ctx));
+			return emit("load", FALSE_VALUE, reg(ctx));
 		}
 	}
 }
