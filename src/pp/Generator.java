@@ -13,12 +13,10 @@ import pp.AtlantisParser.*;
 /**
  * Class to generate SprIl code for Atlantis.
  * @author Kevin Booijink
- *
  */
 public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of operation*/> {
 
-	/** The resulting program. */
-	private Program prog;
+
 	/** The outcome of the checker phase. */
 	private Result checkResult;
 	/** Register count, used to generate fresh registers. */
@@ -28,7 +26,7 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 	
 	
 	/** Generates SprIl code for a given parse tree and a pre-computed checker result.*/
-	public Program generate(ParseTree tree, Result checkResult) {
+	public String generate(ParseTree tree, Result checkResult) {
 		this.prog = new Program();
 		this.checkResult = checkResult;
 		this.regs = new ParseTreeProperty<>();
@@ -43,9 +41,9 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 	 * @param args
 	 * @return
 	 */
-	private Op emit(OpCode opCode, Operand... args) {
-		Op result = new Op( opCode, args);
-		this.prog.addInstr(result);
+	private Op emit(String opCode, String... args) {
+		Op result = new Op(opCode, args);
+		return result;
 	}
 	
 	/** Retrieves the offset of a variable node from the checker*/
@@ -209,5 +207,83 @@ public class Generator extends AtlantisBaseVisitor</*TODO: Make some kind of ope
 			op = Oper.add;
 		}
 		emit(OpCode.compute, op, op1, op2, target);
+	}
+	
+	@Override
+	public Op visitCompExpr(CompExprContext ctx) {
+		Op result = visit(ctx.expr(0));
+		visit(ctx.expr(1));
+		Operand op1 = reg(ctx.expr(0));
+		Operand op2 = reg(ctx.expr(1));
+		Reg target = reg(ctx);
+		Oper op;
+		
+		if (ctx.compOp().getText().equalsIgnoreCase("=")) {
+			op = Oper.cmp_EQ;
+		} else if (ctx.compOp().getText().equalsIgnoreCase(">=")) {
+			op = Oper.cmp_GE;
+		} else if (ctx.compOp().getText().equalsIgnoreCase(">")) {
+			op = Oper.cmp_GT;
+		} else if (ctx.compOp().getText().equalsIgnoreCase("<=")) {
+			op = Oper.cmp_LE;
+		} else if (ctx.compOp().getText().equalsIgnoreCase("<")) {
+			op = Oper.cmp_LT;
+		} else if (ctx.compOp().getText().equalsIgnoreCase("<>")) {
+			op = Oper.cmp_NE;
+		}
+		
+		emit(OpCode.compute, op, op1, op2, target);
+		return result;
+	}
+	
+	@Override
+	public Op visitBoolExpr(BoolExprContext ctx) {
+		Op result = visit(ctx.expr(0));
+		visit(ctx.expr(1));
+		
+		Operand op1 = reg(ctx.expr(0));
+		Operand op2 = reg(ctx.expr(1));
+		Reg target = reg(ctx);
+		Oper op;
+		
+		if (ctx.boolOp().AND() != null) {
+			op = Oper.and;
+		} else {
+			op = Oper.or;
+		}
+		emit(OpCode.compute, op, op1, op2, target);
+		return result;
+	}
+	
+	@Override
+	public Op visitParExpr(ParExprContext ctx) {
+		setReg(ctx, reg(ctx.expr()));
+		return visit(ctx.expr());
+	}
+	
+	@Override
+	public Op visitCallExpr(CallExprContext ctx) {
+		//Call a function
+		return null;
+	}
+	
+	@Override
+	public Op visitVarExpr(VarExprContext ctx) {
+		return emit(OpCode.load, reg(ctx));
+	}
+	
+	@Override
+	public Op visitNumExpr(NumExprContext ctx) {
+		int value = Integer.parseInt(ctx.getText());
+		return emit(OpCode.load, value/*registers*/);
+	}
+	
+	@Override
+	public Op visitBoolExr(BoolExrContext ctx) {
+		if (ctx.BOOL().getSymbol().equals(AtlantisLexer.TRUE)) {
+			return emit(OpCode.load, TRUE_VALUE, reg(ctx));
+		} else {
+			return emit(OpCode.load, FALSE_VALUE, reg(ctx));
+		}
 	}
 }
