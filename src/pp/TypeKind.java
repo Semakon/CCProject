@@ -1,7 +1,8 @@
 package pp;
 
 /**
- * Created by martijn on 15-6-16.
+ * Author:  Martijn
+ * Date:    15-6-2016
  */
 public enum TypeKind {
 
@@ -12,10 +13,7 @@ public enum TypeKind {
     INT,
 
     /** String kind */
-    STR,
-
-    /** Array kind */
-    ARRAY;
+    STR;
 
     public int getSize() {
         //TODO: add appropriate size

@@ -18,7 +18,6 @@ stat    : type? target ASS expr         #assStat
         ;
 
 target  : VAR               #varTarget
-        | VAR LSQ expr RSQ  #arrayTarget
         ;
 
 // Expressions
@@ -33,8 +32,6 @@ expr    : not expr                      #notExpr
         | NUM                           #numExpr
         | STR                           #strExpr
         | BOOL                          #boolExpr
-        | VAR LSQ expr RSQ              #indexExpr
-        | LSQ (expr (COMMA expr)*)? RSQ #arrayExpr
         ;
 
 // Negation
@@ -55,13 +52,11 @@ boolOp  : AND | OR;
 // Data types
 type    : BOOLEAN               #boolType
         | INT                   #intType
-        | STRING                #stringType
-        | type LSQ NUM RSQ      #arrayType
+        | STRING                #strType
         ;
 
 // Reserved keywords
 PROG:       P R O G R A M;
-FUNC:       F U N C T I O N;
 BOOLEAN:    B O O L E A N;
 INT:        I N T E G E R;
 STRING:     S T R I N G;
@@ -75,7 +70,6 @@ FALSE:      F A L S E;
 NOT:        N O T;
 IN:         I N;
 OUT:        O U T;
-RETURN:     R E T U R N;
 
 // Symbols
 ASS:        '=';

@@ -12,18 +12,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by martijn on 15-6-16.
+ * Author:  Martijn
+ * Date:    15-6-2016
  */
 public class TypeChecker extends AtlantisBaseListener {
 
     private ParseTreeProperty<Type> types;
     private List<String> errors;
     private Map<String, Type> varTypes;
+    private List<String> declared;
 
     public TypeChecker() {
         this.types = new ParseTreeProperty<>();
         this.errors = new ArrayList<>();
         this.varTypes = new HashMap<>();
+        this.declared = new ArrayList<>();
     }
 
     public List<String> getErrors() {
@@ -32,15 +35,37 @@ public class TypeChecker extends AtlantisBaseListener {
 
     @Override
     public void enterProgram(ProgramContext ctx) {
-        //TODO: implement
+        // nothing to do
+    }
+
+    @Override
+    public void exitBlock(BlockContext ctx) {
+        // nothing to do
     }
 
     @Override
     public void exitAssStat(AssStatContext ctx) {
-        Type type = type(ctx.expr());
+        Type type;
+        if (ctx.type() == null) {
+            // Check whether target variable has already been given a type
+            boolean declared = false;
+            for (String s : this.declared) {
+                if (s.equals(ctx.target().getText())) {
+                    declared = true;
+                }
+            }
+            // if target has no type yet, give error
+            if (!declared) {
+                addError(ctx, "Type of variable '%s' not yet declared", ctx.target().getText());
+            }
+            type = this.varTypes.get(ctx.target().getText());
+        } else {
+            // set type of target variable
+            type = type(ctx.type());
+            this.varTypes.put(ctx.target().getText(), type);
+        }
         setType(ctx.target(), type);
-        this.varTypes.put(ctx.target().getText(), type);
-        //TODO: not done
+        checkType(ctx.expr(), type);
     }
 
     @Override
@@ -65,12 +90,7 @@ public class TypeChecker extends AtlantisBaseListener {
 
     @Override
     public void exitVarTarget(VarTargetContext ctx) {
-        // nothing to do?
-    }
-
-    @Override
-    public void exitArrayTarget(ArrayTargetContext ctx) {
-        checkType(ctx.expr(), Type.INT);
+        setType(ctx, this.varTypes.get(ctx.getText()));
     }
 
     @Override
@@ -144,33 +164,6 @@ public class TypeChecker extends AtlantisBaseListener {
         setType(ctx, Type.BOOL);
     }
 
-    @Override
-    public void exitIndexExpr(IndexExprContext ctx) {
-        checkType(ctx.expr(), Type.INT);
-    }
-
-    @Override
-    public void exitArrayExpr(ArrayExprContext ctx) {
-        Type type = null;
-        int size = ctx.expr().size();
-        if (size >= 1) {
-            Type t = type(ctx.expr(0));
-            if (t.sameType(Type.INT)) {
-                type = Type.INT_ARR;
-            } else if (t.sameType(Type.STR)) {
-                type = Type.STR_ARR;
-            } else if (t.sameType(Type.BOOL)) {
-                type = Type.BOOL_ARR;
-            } else {
-                //TODO: do we allow arrays of arrays?
-            }
-
-            for (int i = 0; i < size; i++) {
-                checkType(ctx.expr(i), t);
-            }
-        }
-        setType(ctx, type); //TODO: type can be null, find way to deal with this
-    }
 
     @Override
     public void exitBoolType(BoolTypeContext ctx) {
@@ -183,15 +176,8 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
-    public void exitStringType(StringTypeContext ctx) {
+    public void exitStrType(StrTypeContext ctx) {
         setType(ctx, Type.STR);
-    }
-
-    @Override
-    public void exitArrayType(ArrayTypeContext ctx) {
-        int upper = Integer.parseInt(ctx.NUM().getText());
-        Type type = new Type.Array(0, upper, type(ctx.type()));
-        setType(ctx, type);
     }
 
     /** Sets the given parse tree's type to the given type. */

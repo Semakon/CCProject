@@ -2,8 +2,8 @@ program prime;
 
 {
     in("Number? ", x);
-    i = 2;
-    stop = false;
+    integer i = 2;
+    boolean stop = false;
     while not stop && i*i < x do {
         stop = i * (x / i) = x;
         i = i + 1;
