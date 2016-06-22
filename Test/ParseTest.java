@@ -1,18 +1,15 @@
-import org.antlr.v4.runtime.*;
+import static org.junit.Assert.assertEquals;
+
+import project_9.AtlantisCompiler;
+import project_9.checker.CheckResult;
+import project_9.checker.Type;
+import project_9.ParseException;
+import project_9.Utils;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import pp.AtlantisLexer;
-import pp.AtlantisParser;
-import pp.AtlantisParser.*;
-import pp.Type;
 import org.junit.Test;
-import pp.TypeChecker;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Author:  Martijn
@@ -20,24 +17,28 @@ import static org.junit.Assert.assertEquals;
  */
 public class ParseTest {
 
-    private TypeChecker typeChecker = new TypeChecker();
-    private ParseTreeWalker walker = new ParseTreeWalker();
+    private final AtlantisCompiler compiler = AtlantisCompiler.instance();
 
     @Test
-    public void test() {
+    public void testBasic() throws IOException, ParseException {
+        ParseTree tree = parse("basic");
+        CheckResult result = check(tree);
 
+        // debug
+        Utils.pr(result.toString());
+
+        ParseTree body = tree.getChild(3);
+        assertEquals(Type.INT, result.getType(body.getChild(0).getChild(1)));
+        assertEquals(Type.INT, result.getType(body.getChild(1).getChild(1)));
+        assertEquals(Type.INT, result.getType(body.getChild(2).getChild(1)));
     }
 
-    private void fromFile() {
-
+    private ParseTree parse(String filename) throws IOException, ParseException {
+        return this.compiler.parse(new File(Utils.BASE_DIR, filename + Utils.EXT));
     }
 
-    private ProgramContext parse(FileReader fl) throws IOException {
-        CharStream chars = new ANTLRInputStream(fl);
-        Lexer lexer = new AtlantisLexer(chars);
-        TokenStream tokens = new CommonTokenStream(lexer);
-        AtlantisParser parser = new AtlantisParser(tokens);
-        return parser.program();
+    private CheckResult check(ParseTree tree) throws ParseException {
+        return this.compiler.check(tree);
     }
 
 }

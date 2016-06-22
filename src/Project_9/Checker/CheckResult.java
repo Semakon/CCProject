@@ -1,4 +1,4 @@
-package pp;
+package project_9.checker;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;

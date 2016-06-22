@@ -1,11 +1,11 @@
-package pp;
+package Checker;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
 import com.sun.org.apache.xpath.internal.compiler.OpCodes;
 
-import pp.AtlantisParser.*;
+import Checker.AtlantisParser.*;
 
 
 /**

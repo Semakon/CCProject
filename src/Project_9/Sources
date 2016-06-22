@@ -1,0 +1,13 @@
+List of unaltered classes from ProgrammingParadigms:
+- ErrorListener (block 5)
+- ParseException (block 5)
+
+List of altered classes from ProgrammingParadigms:
+- Type (block 5)
+- TypeKind (block 5)
+
+List of classes inspired by ProgrammingParadigms:
+- Op (iloc.model.Op)
+- CheckResult (block5.cc.simple.Checker)
+- Atlantis (block5.cc.pascal.SimplePascal)
+- AtlantisCompiler (block5.cc.SimplePascalCompiler)

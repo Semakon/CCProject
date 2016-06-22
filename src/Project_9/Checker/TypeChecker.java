@@ -1,9 +1,12 @@
-package pp;
+package project_9.checker;
 
+import Checker.AtlantisBaseListener;
+import project_9.ParseException;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
-import pp.AtlantisParser.*;
+import Checker.AtlantisParser.*;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,11 +24,20 @@ public class TypeChecker extends AtlantisBaseListener {
     private Map<String, Type> varTypes;
     private List<String> declared;
 
-    public TypeChecker() {
+    /** Runs this checker on a given parse tree,
+     * and returns the checker result.
+     * @throws ParseException if an error was found during checking.
+     */
+    public CheckResult check(ParseTree tree) throws ParseException {
         this.result = new CheckResult();
         this.errors = new ArrayList<>();
         this.varTypes = new HashMap<>();
         this.declared = new ArrayList<>();
+        new ParseTreeWalker().walk(this, tree);
+        if (hasErrors()) {
+            throw new ParseException(getErrors());
+        }
+        return this.result;
     }
 
     public CheckResult getResult() {
@@ -34,6 +46,10 @@ public class TypeChecker extends AtlantisBaseListener {
 
     public List<String> getErrors() {
         return errors;
+    }
+
+    public boolean hasErrors() {
+        return !this.errors.isEmpty();
     }
 
     @Override
