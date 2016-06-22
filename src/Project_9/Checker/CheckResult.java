@@ -54,12 +54,4 @@ public class CheckResult {
         return entries.get(ctx);
     }
 
-    /** Gives a String representation of CheckResult */
-    public String toString() {
-        String res = "Types:\t" + types.toString();
-        res += "\nOffsets:\t" + offsets.toString();
-        res += "\nEntries:\t" + entries.toString();
-        return res;
-    }
-
 }

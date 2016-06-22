@@ -1,12 +1,12 @@
 package project_9.checker;
 
-import Checker.AtlantisBaseListener;
-import project_9.ParseException;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
-import Checker.AtlantisParser.*;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import project_9.ParseException;
+import project_9.atlantis.AtlantisBaseListener;
+import project_9.atlantis.AtlantisParser.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,23 +65,25 @@ public class TypeChecker extends AtlantisBaseListener {
     @Override
     public void exitAssStat(AssStatContext ctx) {
         Type type;
+        String target = ctx.target().getText();
         if (ctx.type() == null) {
             // Check whether target variable has already been given a type
             boolean declared = false;
             for (String s : this.declared) {
-                if (s.equals(ctx.target().getText())) {
+                if (s.equals(target)) {
                     declared = true;
                 }
             }
             // if target has no type yet, give error
             if (!declared) {
-                addError(ctx, "Type of variable '%s' not yet declared", ctx.target().getText());
+                addError(ctx, "Type of variable '%s' not yet declared", target);
             }
-            type = this.varTypes.get(ctx.target().getText());
+            type = this.varTypes.get(target);
         } else {
             // set type of target variable
             type = type(ctx.type());
-            this.varTypes.put(ctx.target().getText(), type);
+            this.varTypes.put(target, type);
+            this.declared.add(target);
         }
         setType(ctx.target(), type);
         checkType(ctx.expr(), type);
@@ -179,10 +181,14 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
-    public void exitBoolExpr(BoolExprContext ctx) {
+    public void exitFalseExpr(FalseExprContext ctx) {
         setType(ctx, Type.BOOL);
     }
 
+    @Override
+    public void exitTrueExpr(TrueExprContext ctx) {
+        setType(ctx, Type.BOOL);
+    }
 
     @Override
     public void exitBoolType(BoolTypeContext ctx) {

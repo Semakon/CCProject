@@ -1,0 +1,13 @@
+program basicExpr;
+
+{
+    integer x = 15 - 3;
+    integer y = 8;
+    integer z = x + y;
+    z = x / 5;
+
+    boolean isTrue = true;
+    boolean isFalse = false;
+    boolean both = isTrue && isFalse;
+    both = isTrue || isFalse;
+}

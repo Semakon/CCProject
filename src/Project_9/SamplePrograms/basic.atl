@@ -2,6 +2,9 @@ program basic;
 
 {
     integer x = 5;
-    boolean y = false;
-    string z = "random";
+    string y = "random";
+    boolean z = false;
+    x = 6;
+    y = "renamed";
+    z = true;
 }

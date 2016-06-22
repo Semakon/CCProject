@@ -31,7 +31,8 @@ expr    : not expr                      #notExpr
         | VAR                           #varExpr
         | NUM                           #numExpr
         | STR                           #strExpr
-        | BOOL                          #boolExpr
+        | FALSE                         #falseExpr
+        | TRUE                          #trueExpr
         ;
 
 // Negation

@@ -1,7 +1,7 @@
 package project_9;
 
-import Checker.AtlantisLexer;
-import Checker.AtlantisParser;
+import project_9.atlantis.AtlantisLexer;
+import project_9.atlantis.AtlantisParser;
 import project_9.checker.CheckResult;
 import project_9.checker.TypeChecker;
 import org.antlr.v4.runtime.*;
@@ -22,6 +22,24 @@ public class AtlantisCompiler {
 
     /** The fixed TypeChecker of this compiler. */
     private final TypeChecker checker;
+
+    /** Compiles and runs the program named in the argument. */
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            System.err.println("Usage: filename");
+            return;
+        }
+        try {
+            System.out.println("--- Running " + args[0]);
+            ParseTree res = instance().parse(new File(args[0]));
+            System.out.println(res);
+            System.out.println("--- Done with " + args[0]);
+        } catch (ParseException exc) {
+            exc.print();
+        } catch (IOException exc) {
+            exc.printStackTrace();
+        }
+    }
 
     /** This class' constructor. */
     public AtlantisCompiler() {
