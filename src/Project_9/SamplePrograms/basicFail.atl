@@ -1,0 +1,5 @@
+program basicFail;
+
+{
+    integer x = false;
+}
