@@ -1,0 +1,7 @@
+program basic;
+
+{
+    integer x = 5;
+    boolean y = false;
+    string z = "random";
+}

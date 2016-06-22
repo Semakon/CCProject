@@ -3,7 +3,6 @@ package pp;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import pp.AtlantisParser.*;
 
 import java.util.ArrayList;
@@ -17,16 +16,20 @@ import java.util.Map;
  */
 public class TypeChecker extends AtlantisBaseListener {
 
-    private ParseTreeProperty<Type> types;
+    private CheckResult result;
     private List<String> errors;
     private Map<String, Type> varTypes;
     private List<String> declared;
 
     public TypeChecker() {
-        this.types = new ParseTreeProperty<>();
+        this.result = new CheckResult();
         this.errors = new ArrayList<>();
         this.varTypes = new HashMap<>();
         this.declared = new ArrayList<>();
+    }
+
+    public CheckResult getResult() {
+        return this.result;
     }
 
     public List<String> getErrors() {
@@ -180,14 +183,34 @@ public class TypeChecker extends AtlantisBaseListener {
         setType(ctx, Type.STR);
     }
 
+    /** Sets the given parse tree's entry to the given entry. */
+    private void setEntry(ParseTree ctx, ParserRuleContext entry) {
+        result.setEntry(ctx, entry);
+    }
+
+    /** Returns the given parse tree's entry. */
+    public ParserRuleContext entry(ParseTree ctx) {
+        return result.getEntry(ctx);
+    }
+
+    /** Sets the given parse tree's offset to the given offset. */
+    private void setOffset(ParseTree ctx, int offset) {
+        result.setOffset(ctx, offset);
+    }
+
+    /** Returns the given parse tree's offset. */
+    public int offset(ParseTree ctx) {
+        return result.getOffset(ctx);
+    }
+
     /** Sets the given parse tree's type to the given type. */
     private void setType(ParseTree ctx, Type type) {
-        types.put(ctx, type);
+        result.setType(ctx, type);
     }
 
     /** Returns the given parse tree's type. */
     public Type type(ParseTree ctx) {
-        return types.get(ctx);
+        return result.getType(ctx);
     }
 
     /** Returns true if the given parse tree has the same type as the given type. */

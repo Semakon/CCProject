@@ -8,10 +8,15 @@ import pp.Type;
 import org.junit.Test;
 import pp.TypeChecker;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by martijn on 15-6-16.
+ * Author:  Martijn
+ * Date:    15-6-2016
  */
 public class ParseTest {
 
@@ -20,21 +25,19 @@ public class ParseTest {
 
     @Test
     public void test() {
-        test(Type.INT, "3");
+
     }
 
-    private void test(Type type, String expr) {
-        ParseTree tree = parse(expr);
-        this.walker.walk(this.typeChecker, tree);
-        assertEquals(type, this.typeChecker.type(tree));
+    private void fromFile() {
+
     }
 
-    private ExprContext parse(String text) {
-        CharStream chars = new ANTLRInputStream(text);
+    private ProgramContext parse(FileReader fl) throws IOException {
+        CharStream chars = new ANTLRInputStream(fl);
         Lexer lexer = new AtlantisLexer(chars);
         TokenStream tokens = new CommonTokenStream(lexer);
         AtlantisParser parser = new AtlantisParser(tokens);
-        return parser.expr();
+        return parser.program();
     }
 
 }
