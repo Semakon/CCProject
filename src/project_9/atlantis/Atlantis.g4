@@ -1,14 +1,14 @@
 grammar Atlantis;
 
-// Actual program
+/* Actual program */
 program : PROG VAR SEMI block
         ;
 
-// Block with statements
+/* Block with statements */
 block   : LBRACE (stat SEMI)+ RBRACE
         ;
 
-// Statements
+/* Statements */
 stat    : type? target ASS expr         #assStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
@@ -20,7 +20,7 @@ stat    : type? target ASS expr         #assStat
 target  : VAR               #varTarget
         ;
 
-// Expressions
+/* Expressions */
 expr    : not expr                      #notExpr
         | expr HAT expr                 #hatExpr
         | expr multOp expr              #multExpr
@@ -35,28 +35,28 @@ expr    : not expr                      #notExpr
         | TRUE                          #trueExpr
         ;
 
-// Negation
+/* Negation */
 not     : NOT | MINUS;
 
-// Multipliative operator
+/* Multipliative operator */
 multOp  : MULT | SLASH;
 
-// Addition operator
+/* Addition operator */
 plusOp  : PLUS | MINUS;
 
-// Comparative operator
+/* Comparative operator */
 compOp  : EQ | NE | GT | GE | LT | LE;
 
-// Boolean operator
+/* Boolean operator */
 boolOp  : AND | OR;
 
-// Data types
+/* Data types */
 type    : BOOLEAN               #boolType
         | INT                   #intType
         | STRING                #strType
         ;
 
-// Reserved keywords
+/* Reserved keywords */
 PROG:       P R O G R A M;
 BOOLEAN:    B O O L E A N;
 INT:        I N T E G E R;
@@ -72,7 +72,7 @@ NOT:        N O T;
 IN:         I N;
 OUT:        O U T;
 
-// Symbols
+/* Symbols */
 ASS:        '=';
 EQ:         '==';
 NE:         '<>';
@@ -102,7 +102,7 @@ OR:         '||';
 BSLASH:     '\\';
 HASH:       '#';
 
-// Tokens with content
+/* Tokens with content */
 VAR:        LETTER (LETTER | DIGIT)*;
 NUM:        DIGIT+;
 STR:        DQUOTE .*? DQUOTE;
@@ -111,11 +111,11 @@ BOOL:       TRUE | FALSE;
 fragment LETTER:    [A-Za-z];
 fragment DIGIT:     [0-9];
 
-// Skips
+/* Skips */
 COMMENT:    HASH .*? HASH -> skip;
 WS:         [ \t\n\r] -> skip;
 
-// Letter fragments
+/* Letter fragments */
 fragment A: [aA];
 fragment B: [bB];
 fragment C: [cC];

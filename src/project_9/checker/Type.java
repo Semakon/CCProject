@@ -19,12 +19,15 @@ abstract public class Type {
         this.kind = kind;
     }
 
+    /** Returns this Type's TypeKind. */
     public TypeKind getKind() {
         return this.kind;
     }
 
+    /** Returns this Type's size in bytes. */
     abstract public int getSize();
 
+    /** Checks whether a given object is the same type as this Type. */
     abstract public boolean sameType(Object obj);
 
     /** Representation of the Boolean type. */
