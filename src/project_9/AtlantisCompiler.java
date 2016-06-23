@@ -1,11 +1,11 @@
 package project_9;
 
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.ParseTree;
 import project_9.atlantis.AtlantisLexer;
 import project_9.atlantis.AtlantisParser;
 import project_9.checker.CheckResult;
 import project_9.checker.TypeChecker;
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.File;
 import java.io.FileReader;
