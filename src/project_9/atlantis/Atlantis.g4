@@ -13,7 +13,7 @@ stat    : type? target ASS expr         #assStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
-        | IN LPAR STR COMMA VAR RPAR    #inStat
+        | IN LPAR STR COMMA target RPAR #inStat
         | OUT LPAR STR COMMA expr RPAR  #outStat
         ;
 

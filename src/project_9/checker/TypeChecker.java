@@ -9,9 +9,7 @@ import project_9.atlantis.AtlantisBaseListener;
 import project_9.atlantis.AtlantisParser.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Author:  Martijn
@@ -21,8 +19,7 @@ public class TypeChecker extends AtlantisBaseListener {
 
     private CheckResult result;
     private List<String> errors;
-    private Map<String, Type> varTypes;
-    private List<String> declared;
+    private Scope scope;
 
     /** Runs this checker on a given parse tree,
      * and returns the checker result.
@@ -31,8 +28,7 @@ public class TypeChecker extends AtlantisBaseListener {
     public CheckResult check(ParseTree tree) throws ParseException {
         this.result = new CheckResult();
         this.errors = new ArrayList<>();
-        this.varTypes = new HashMap<>();
-        this.declared = new ArrayList<>();
+        this.scope = new Scope();
         new ParseTreeWalker().walk(this, tree);
         if (hasErrors()) {
             throw new ParseException(getErrors());
@@ -54,64 +50,64 @@ public class TypeChecker extends AtlantisBaseListener {
 
     @Override
     public void enterProgram(ProgramContext ctx) {
-        // nothing to do
+        setEntry(ctx, entry(ctx.block()));
     }
 
     @Override
     public void exitBlock(BlockContext ctx) {
-        // nothing to do
+        setEntry(ctx, entry(ctx.stat(0)));
     }
 
     @Override
     public void exitAssStat(AssStatContext ctx) {
-        Type type;
         String target = ctx.target().getText();
-        if (ctx.type() == null) {
-            // Check whether target variable has already been given a type
-            boolean declared = false;
-            for (String s : this.declared) {
-                if (s.equals(target)) {
-                    declared = true;
-                }
+        Type type = this.scope.type(target);
+
+        if (type == null) {
+            if (ctx.type() == null) {
+                // type undefined
+                addError(ctx, "Type of variable '%s' is not yet defined", target);
+            } else {
+                // set type of target variable
+                type = type(ctx.type());
+                this.scope.put(target, type);
+                setType(ctx.target(), type);
             }
-            // if target has no type yet, give error
-            if (!declared) {
-                addError(ctx, "Type of variable '%s' not yet declared", target);
-            }
-            type = this.varTypes.get(target);
-        } else {
-            // set type of target variable
-            type = type(ctx.type());
-            this.varTypes.put(target, type);
-            this.declared.add(target);
         }
-        setType(ctx.target(), type);
+
         checkType(ctx.expr(), type);
+        setEntry(ctx.target(), entry(ctx.expr()));
+        setEntry(ctx, entry(ctx.target()));
     }
 
     @Override
     public void exitIfStat(IfStatContext ctx) {
         checkType(ctx.expr(), Type.BOOL);
+        setEntry(ctx, entry(ctx.expr()));
     }
 
     @Override
     public void exitWhileStat(WhileStatContext ctx) {
         checkType(ctx.expr(), Type.BOOL);
+        setEntry(ctx, entry(ctx.expr()));
     }
 
     @Override
     public void exitInStat(InStatContext ctx) {
-        // nothing to do?
+        setEntry(ctx, entry(ctx.target()));
     }
 
     @Override
     public void exitOutStat(OutStatContext ctx) {
-        // nothing to do?
+        setEntry(ctx, entry(ctx.expr()));
     }
 
     @Override
     public void exitVarTarget(VarTargetContext ctx) {
-        setType(ctx, this.varTypes.get(ctx.getText()));
+        String id = ctx.getText();
+        setOffset(ctx, this.scope.offset(id));
+        setType(ctx, this.scope.type(id));
+        setEntry(ctx, ctx);
     }
 
     @Override
@@ -122,8 +118,10 @@ public class TypeChecker extends AtlantisBaseListener {
         } else if (actual.equals(Type.BOOL)) {
             setType(ctx, Type.BOOL);
         } else {
-            addError(ctx, "Expected type '%s' or '%s' but found '%s'", Type.INT, Type.BOOL, actual);
+            addError(ctx, "Expected type '%s' or '%s' but found '%s'",
+                    Type.INT, Type.BOOL, actual);
         }
+        setEntry(ctx, entry(ctx.expr()));
     }
 
     @Override
@@ -131,6 +129,7 @@ public class TypeChecker extends AtlantisBaseListener {
         checkType(ctx.expr(0), Type.INT);
         checkType(ctx.expr(1), Type.INT);
         setType(ctx, Type.INT);
+        setEntry(ctx, entry(ctx.expr(0)));
     }
 
     @Override
@@ -138,6 +137,7 @@ public class TypeChecker extends AtlantisBaseListener {
         checkType(ctx.expr(0), Type.INT);
         checkType(ctx.expr(1), Type.INT);
         setType(ctx, Type.INT);
+        setEntry(ctx, entry(ctx.expr(0)));
     }
 
     @Override
@@ -145,12 +145,14 @@ public class TypeChecker extends AtlantisBaseListener {
         checkType(ctx.expr(0), Type.INT);
         checkType(ctx.expr(1), Type.INT);
         setType(ctx, Type.INT);
+        setEntry(ctx, entry(ctx.expr(0)));
     }
 
     @Override
     public void exitCompExpr(CompExprContext ctx) {
         checkType(ctx.expr(0), type(ctx.expr(1)));
         setType(ctx, Type.BOOL);
+        setEntry(ctx, entry(ctx.expr(0)));
     }
 
     @Override
@@ -158,36 +160,45 @@ public class TypeChecker extends AtlantisBaseListener {
         checkType(ctx.expr(0), Type.BOOL);
         checkType(ctx.expr(1), Type.BOOL);
         setType(ctx, Type.BOOL);
+        setEntry(ctx, entry(ctx.expr(0)));
     }
 
     @Override
     public void exitParExpr(ParExprContext ctx) {
         setType(ctx, type(ctx.expr()));
+        setEntry(ctx, entry(ctx.expr()));
     }
 
     @Override
     public void exitVarExpr(VarExprContext ctx) {
-        setType(ctx, varTypes.get(ctx.VAR().getText()));
+        String id = ctx.VAR().getText();
+        setOffset(ctx, this.scope.offset(id));
+        setType(ctx, this.scope.type(id));
+        setEntry(ctx, ctx);
     }
 
     @Override
     public void exitNumExpr(NumExprContext ctx) {
         setType(ctx, Type.INT);
+        setEntry(ctx, ctx);
     }
 
     @Override
     public void exitStrExpr(StrExprContext ctx) {
         setType(ctx, Type.STR);
+        setEntry(ctx, ctx);
     }
 
     @Override
     public void exitFalseExpr(FalseExprContext ctx) {
         setType(ctx, Type.BOOL);
+        setEntry(ctx, ctx);
     }
 
     @Override
     public void exitTrueExpr(TrueExprContext ctx) {
         setType(ctx, Type.BOOL);
+        setEntry(ctx, ctx);
     }
 
     @Override
@@ -218,11 +229,6 @@ public class TypeChecker extends AtlantisBaseListener {
     /** Sets the given parse tree's offset to the given offset. */
     private void setOffset(ParseTree ctx, int offset) {
         result.setOffset(ctx, offset);
-    }
-
-    /** Returns the given parse tree's offset. */
-    public int offset(ParseTree ctx) {
-        return result.getOffset(ctx);
     }
 
     /** Sets the given parse tree's type to the given type. */
