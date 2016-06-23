@@ -1,4 +1,4 @@
-package generator;
+package project_9.checker;
 
 import org.antlr.v4.runtime.atn.SemanticContext.Operator;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -12,7 +12,6 @@ import pp.AtlantisLexer;
 import pp.AtlantisParser;
 import pp.Op;
 import pp.AtlantisParser.*;
-import project_9.checker.CheckResult;
 
 
 /**
