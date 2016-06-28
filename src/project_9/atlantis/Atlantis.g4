@@ -13,8 +13,10 @@ stat    : type? target ASS expr         #assStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
+        | FORK RPAR expr LPAR block     #forkStat
         ;
 
+/* Target variable */
 target  : VAR               #varTarget
         ;
 
@@ -63,6 +65,7 @@ ELSE:       E L S E;
 TRUE:       T R U E;
 FALSE:      F A L S E;
 NOT:        N O T;
+FORK:       F O R K;
 
 /* Symbols */
 ASS:        '=';

@@ -31,12 +31,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private int instrcount;
 	/** List of instruction */
 	private List<Op> instructions;
-
+	/** List of errors that occured during generating. */
 	private List<String> errors;
 	
 	
 	/** Generates SprIl code for a given parse tree and a pre-computed checker result.*/
-	public Program generate(ParseTree tree, CheckResult checkResult) {
+	public Program generate(ParseTree tree, CheckResult checkResult) throws ParseException {
 		this.program = new Program();
 		this.checkResult = checkResult;
 		this.errors = new ArrayList<>();
@@ -45,6 +45,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		this.instrcount = 0;
 		this.regsInUse = new boolean[regCount];
 		tree.accept(this);
+		if (hasErrors()) {
+			throw new ParseException(getErrors());
+		}
 		return program;
 	}
 
