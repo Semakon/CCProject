@@ -15,9 +15,17 @@ public enum TypeKind {
     /** String kind */
     STR;
 
+    /** Returns the TypeKind's size in bytes. */
     public int getSize() {
-        //TODO: add appropriate size
-        return 0;
+        int size;
+        if (this == BOOL) {
+            size = 4;
+        } else if (this == INT) {
+            size = 4;
+        } else { // this == STR
+            size = 4; // TODO: replace placeholders with actual values;
+        }
+        return size;
     }
 
 }
