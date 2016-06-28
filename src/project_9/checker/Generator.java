@@ -1,5 +1,7 @@
 package project_9.checker;
 
+import java.util.List;
+
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import project_9.atlantis.AtlantisBaseVisitor;
@@ -23,6 +25,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private boolean[] regsInUse;
 	/** Integer to keep track of the amount of instructions*/
 	private int instrcount;
+	/** List of instruction */
+	private List<Op> instructions;
 	
 	
 	/** Generates SprIl code for a given parse tree and a pre-computed checker result.*/
@@ -133,9 +137,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		regs.put(ctx, reg);
 		
 		if (ctx.ELSE() != null) {
-			emit("Branch", toReg(reg) /*Jump to else-expression*/);
+			int instrSize = instructions.size();
+			this.instrcount = 0;
 			visit(ctx.block(0));
 			emit("Jump" /*Jump to end of expression*/);
+			int count = this.instrcount;
+			instructions.
 			visit(ctx.block(1));
 		} else {
 			emit("Branch", toReg(reg) /*Jump to end of expression*/);
