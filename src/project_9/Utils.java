@@ -14,6 +14,12 @@ public class Utils {
     /** Extension of Atlantis programs */
     public final static String EXT = ".atl";
 
+    /** Size of a integer type in bytes. */
+    public final static int INT_SIZE = 4;
+
+    /** Size of a boolean type in bytes. */
+    public final static int BOOL_SIZE = 4;
+
     /** Static boolean that determines debugging */
     public static final boolean DEBUG = true;
 

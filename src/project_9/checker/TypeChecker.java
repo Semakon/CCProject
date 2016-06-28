@@ -166,12 +166,6 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
-    public void exitStrExpr(StrExprContext ctx) {
-        setType(ctx, Type.STR);
-        setEntry(ctx, ctx);
-    }
-
-    @Override
     public void exitFalseExpr(FalseExprContext ctx) {
         setType(ctx, Type.BOOL);
         setEntry(ctx, ctx);
@@ -191,11 +185,6 @@ public class TypeChecker extends AtlantisBaseListener {
     @Override
     public void exitIntType(IntTypeContext ctx) {
         setType(ctx, Type.INT);
-    }
-
-    @Override
-    public void exitStrType(StrTypeContext ctx) {
-        setType(ctx, Type.STR);
     }
 
     /** Sets the given parse tree's entry to the given entry. */
