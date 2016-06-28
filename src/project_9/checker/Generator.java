@@ -32,6 +32,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	/** List of instruction */
 	private List<Op> instructions;
 	/** List of errors that occured during generating. */
+
 	private List<String> errors;
 	
 	
@@ -152,9 +153,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr());
 		visit(ctx.target());
 		Integer reg = regs.get(ctx.expr());
-		String target = "Diraddr " + offset(ctx.target()).toString();
+		String target = "Diraddr " + offset(ctx.target()).toString();// TODO: calculate correct memory address
 		
-		emit("Store", toReg(reg), target);
+		Op store = emit("Store", toReg(reg), target);
+		program.addOp(store);
 		switchReg(reg);
 		return result;
 	}
@@ -166,25 +168,25 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		regs.put(ctx, reg);
 		
 		if (ctx.ELSE() != null) {
-			int branchloc = instructions.size();
+			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
 			visit(ctx.block(0));
-			int jumploc = instructions.size() + 1;
+			int jumploc = program.getOperations().size() + 1;
 			int thencount = this.instrcount;
 			this.instrcount = 0;
 			visit(ctx.block(1));
 			int elsecount = this.instrcount;
 			Op branch = emit("Branch", toReg(reg), "Rel", Integer.toString(thencount));
-			instructions.add(branchloc, branch);
+			program.addOpAt(branchloc,  branch);
 			Op jump = emit("Jump", "Rel", Integer.toString(elsecount));
-			instructions.add(jumploc, jump);
+			program.addOpAt(jumploc, jump);
 		} else {
-			int branchloc = instructions.size();
+			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
 			visit(ctx.block(0));
 			int count = this.instrcount;
 			Op branch = emit("Branch", toReg(reg), "Rel", Integer.toString(count));
-			instructions.add(branchloc, branch);
+			program.addOpAt(branchloc, branch);
 		}
 		switchReg(reg);
 		return result;
@@ -192,18 +194,19 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitWhileStat(WhileStatContext ctx) {
-		int jumpTo = instructions.size();
+		int jumpTo = program.getOperations().size();
 		this.instrcount = 0;
 		Op result = visit(ctx.expr());
 		Op block = visit(ctx.block());
 		Op nop = emit("Nop"); //<- Jump to here at end of while loop.
-		int endWhile = instructions.size() - 1;
+		program.addOp(nop);
+		int endWhile = program.getOperations().size() - 1;
 		Integer reg = regs.removeFrom(ctx.expr());
 		regs.put(ctx, reg);
 		Op branch = emit("Branch", toReg(reg), "Abs", Integer.toString(endWhile));
-		instructions.add(jumpTo, branch);
+		program.addOpAt(jumpTo, branch);
 		Op jump = emit("Jump", "Abs", Integer.toBinaryString(jumpTo));
-		instructions.add(endWhile, jump);
+		program.addOpAt(endWhile, jump);
 		switchReg(reg);
 		return result;
 	}
@@ -217,10 +220,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Integer target = nextReg();
 		if (ctx.not().MINUS() == null) {
 			Op compute = emit("Compute", "NEq", toReg(operand1), "reg0", toReg(target));
-			instructions.add(compute);
+			program.addOp(compute);
 		} else {
 			Op compute = emit("Compute", "Sub", "reg0", toReg(operand1), toReg(target));
-			instructions.add(compute);
+			program.addOp(compute);
 		}
 		return result;
 	}
@@ -244,7 +247,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		}
 		
 		Op compute = emit("Compute", op, toReg(operand1), toReg(operand2), toReg(target));
-		instructions.add(compute);
+		program.addOp(compute);
 		return result;
 	}
 	
@@ -266,7 +269,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			op = "Add";
 		}
 		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
-		instructions.add(compute);
+		program.addOp(compute);
 		return compute;
 	}
 	
@@ -296,7 +299,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		}
 		
 		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
-		instructions.add(compute);
+		program.addOp(compute);
 		return compute;
 	}
 	
@@ -318,7 +321,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			op = "Or";
 		}
 		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
-		instructions.add(compute);
+		program.addOp(compute);
 		return compute;
 	}
 	
@@ -333,8 +336,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitVarExpr(VarExprContext ctx) {
 		String text = ctx.VAR().getText();
 		Integer reg = nextReg();
-		Op emit = emit("Load", text, toReg(reg));
-		instructions.add(emit);
+		Op emit = emit("Load", text, toReg(reg)); //TODO: Find correct memory address for var
+		program.addOp(emit);
 		return emit;
 	}
 	
@@ -343,7 +346,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Integer value = Integer.parseInt(ctx.getText());
 		Integer reg = nextReg();
 		Op emit = emit("Ldconst", value.toString(), toReg(reg));
-		instructions.add(emit);
+		program.addOp(emit);
 		return emit;
 	}
 

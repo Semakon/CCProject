@@ -29,6 +29,22 @@ public class Program {
     public void setOpAt(int i, Op op) {
         operations.set(i, op);
     }
+    
+    /**
+     * Adds an operation at a given line number within the program (without replacing).
+     * @param i The line number.
+     * @param op The operation to be inserted. 
+     */
+    public void addOpAt(int i, Op op) {
+    	operations.add(i, op);
+    }
+    /**
+     * Adds an operation to the end of the program.
+     * @param op The operation to be added.
+     */
+    public void addOp(Op op) {
+    	operations.add(op);
+    }
 
     /**
      * Returns the operation at the given line number.
