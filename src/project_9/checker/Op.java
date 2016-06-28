@@ -8,40 +8,40 @@ public class Op {
 	
 	public Op(String operation, String... strings) {
 		switch(operation) {
-		case "compute":
+		case "Compute":
 			compute(strings);
 			break;
-		case "ldconst":
+		case "Ldconst":
 			ldconst(strings);
 			break;
-		case "load":
+		case "Load":
 			load(strings);
 			break;
-		case "jump":
+		case "Jump":
 			jump(strings);
 			break;
-		case "branch":
+		case "Branch":
 			branch(strings);
 			break;
-		case "store":
+		case "Store":
 			store(strings);
 			break;
-		case "push":
+		case "Push":
 			push(strings);
 			break;
-		case "pop":
+		case "Pop":
 			pop(strings);
 			break;
-		case "receive":
+		case "Receive":
 			receive(strings);
 			break;
-		case "read":
+		case "Read":
 			read(strings);
 			break;
-		case "testandset":
+		case "Testandset":
 			tas(strings);
 			break;
-		case "write":
+		case "Write":
 			write(strings);
 			break;
 		}

@@ -137,15 +137,25 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		regs.put(ctx, reg);
 		
 		if (ctx.ELSE() != null) {
-			int instrSize = instructions.size();
+			int branchloc = instructions.size();
 			this.instrcount = 0;
 			visit(ctx.block(0));
-			emit("Jump" /*Jump to end of expression*/);
-			int count = this.instrcount;
+			int jumploc = instructions.size() + 1;
+			int thencount = this.instrcount;
+			this.instrcount = 0;
 			visit(ctx.block(1));
+			int elsecount = this.instrcount;
+			Op branch = emit("Branch", toReg(reg), "Rel", Integer.toString(thencount));
+			instructions.add(branchloc, branch);
+			Op jump = emit("Jump", "Rel", Integer.toString(elsecount));
+			instructions.add(jumploc, jump);
 		} else {
-			emit("Branch", toReg(reg) /*Jump to end of expression*/);
+			int branchloc = instructions.size();
+			this.instrcount = 0;
 			visit(ctx.block(0));
+			int count = this.instrcount;
+			Op branch = emit("Branch", toReg(reg), "Rel", Integer.toString(count));
+			instructions.add(branchloc, branch);
 		}
 		switchReg(reg);
 		return result;
@@ -153,16 +163,18 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitWhileStat(WhileStatContext ctx) {
+		int jumpTo = instructions.size();
+		this.instrcount = 0;
 		Op result = visit(ctx.expr());
+		Op block = visit(ctx.block());
+		Op nop = emit("Nop"); //<- Jump to here at end of while loop.
+		int endWhile = instructions.size() - 1;
 		Integer reg = regs.removeFrom(ctx.expr());
 		regs.put(ctx, reg);
-		emit("Branch", toReg(reg) /*End of expression*/);
-		visit(ctx.block());
-		emit("Jump" /*Start of this while*/);
-		emit("Nop"); //<- Jump to here at end of while loop.
-		
-		
-		
+		Op branch = emit("Branch", toReg(reg), "Abs", Integer.toString(endWhile));
+		instructions.add(jumpTo, branch);
+		Op jump = emit("Jump", "Abs", Integer.toBinaryString(jumpTo));
+		instructions.add(endWhile, jump);
 		switchReg(reg);
 		return result;
 	}
@@ -175,9 +187,11 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		regs.put(ctx, operand1);
 		Integer target = nextReg();
 		if (ctx.not().MINUS() == null) {
-			emit("Compute", "NEq", toReg(operand1), "reg0", toReg(target));
+			Op compute = emit("Compute", "NEq", toReg(operand1), "reg0", toReg(target));
+			instructions.add(compute);
 		} else {
-			emit("Compute", "Sub", "reg0", toReg(operand1), toReg(target));
+			Op compute = emit("Compute", "Sub", "reg0", toReg(operand1), toReg(target));
+			instructions.add(compute);
 		}
 		return result;
 	}
@@ -200,7 +214,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			op = "Mul";
 		}
 		
-		emit("Compute", op, toReg(operand1), toReg(operand2), toReg(target));
+		Op compute = emit("Compute", op, toReg(operand1), toReg(operand2), toReg(target));
+		instructions.add(compute);
 		return result;
 	}
 	
@@ -221,13 +236,14 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		} else {
 			op = "Add";
 		}
-		emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
-		return result;
+		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
+		instructions.add(compute);
+		return compute;
 	}
 	
 	@Override
 	public Op visitCompExpr(CompExprContext ctx) {
-		Op result = visit(ctx.expr(0));
+		visit(ctx.expr(0));
 		visit(ctx.expr(1));
 		Integer op1 = regs.removeFrom(ctx.expr(0));
 		Integer op2 = regs.removeFrom(ctx.expr(1));
@@ -250,8 +266,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			op = "NEq";
 		}
 		
-		emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
-		return result;
+		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
+		instructions.add(compute);
+		return compute;
 	}
 	
 	@Override
@@ -271,8 +288,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		} else {
 			op = "Or";
 		}
-		emit("compute", op, toReg(op1), toReg(op2), toReg(target));
-		return result;
+		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
+		instructions.add(compute);
+		return compute;
 	}
 	
 	@Override
@@ -286,13 +304,17 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitVarExpr(VarExprContext ctx) {
 		String text = ctx.VAR().getText();
 		Integer reg = nextReg();
-		return emit("Load", text, toReg(reg));
+		Op emit = emit("Load", text, toReg(reg));
+		instructions.add(emit);
+		return emit;
 	}
 	
 	@Override
 	public Op visitNumExpr(NumExprContext ctx) {
 		Integer value = Integer.parseInt(ctx.getText());
 		Integer reg = nextReg();
-		return emit("Load", value.toString(), toReg(reg));
+		Op emit = emit("Ldconst", value.toString(), toReg(reg));
+		instructions.add(emit);
+		return emit;
 	}
 }
