@@ -142,7 +142,6 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			visit(ctx.block(0));
 			emit("Jump" /*Jump to end of expression*/);
 			int count = this.instrcount;
-			instructions.
 			visit(ctx.block(1));
 		} else {
 			emit("Branch", toReg(reg) /*Jump to end of expression*/);
