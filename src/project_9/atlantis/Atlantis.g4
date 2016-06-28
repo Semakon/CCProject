@@ -13,8 +13,6 @@ stat    : type? target ASS expr         #assStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
-        | IN LPAR STR COMMA target RPAR #inStat
-        | OUT LPAR STR COMMA expr RPAR  #outStat
         ;
 
 target  : VAR               #varTarget
@@ -22,7 +20,6 @@ target  : VAR               #varTarget
 
 /* Expressions */
 expr    : not expr                      #notExpr
-        | expr HAT expr                 #hatExpr
         | expr multOp expr              #multExpr
         | expr plusOp expr              #plusExpr
         | expr compOp expr              #compExpr
@@ -69,8 +66,6 @@ ELSE:       E L S E;
 TRUE:       T R U E;
 FALSE:      F A L S E;
 NOT:        N O T;
-IN:         I N;
-OUT:        O U T;
 
 /* Symbols */
 ASS:        '=';
@@ -96,7 +91,6 @@ PLUS:       '+';
 MINUS:      '-';
 SLASH:      '/';
 MULT:       '*';
-HAT:        '^';
 AND:        '&&';
 OR:         '||';
 BSLASH:     '\\';

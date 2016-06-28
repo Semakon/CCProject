@@ -93,16 +93,6 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
-    public void exitInStat(InStatContext ctx) {
-        setEntry(ctx, entry(ctx.target()));
-    }
-
-    @Override
-    public void exitOutStat(OutStatContext ctx) {
-        setEntry(ctx, entry(ctx.expr()));
-    }
-
-    @Override
     public void exitVarTarget(VarTargetContext ctx) {
         String id = ctx.getText();
         setOffset(ctx, this.scope.offset(id));
@@ -122,14 +112,6 @@ public class TypeChecker extends AtlantisBaseListener {
                     Type.INT, Type.BOOL, actual);
         }
         setEntry(ctx, entry(ctx.expr()));
-    }
-
-    @Override
-    public void exitHatExpr(HatExprContext ctx) {
-        checkType(ctx.expr(0), Type.INT);
-        checkType(ctx.expr(1), Type.INT);
-        setType(ctx, Type.INT);
-        setEntry(ctx, entry(ctx.expr(0)));
     }
 
     @Override
