@@ -44,6 +44,12 @@ public class Op {
 		case "Write":
 			write(strings);
 			break;
+		case "Nop":
+			this.instr = "Nop";
+			break;
+		case "EndProg":
+			this.instr = "EndProg";
+			break;
 		}
 	}
 	
