@@ -1,9 +1,13 @@
 package project_9.checker;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
+import project_9.ParseException;
 import project_9.atlantis.AtlantisBaseVisitor;
 import project_9.atlantis.AtlantisParser.*;
 
@@ -14,7 +18,7 @@ import project_9.atlantis.AtlantisParser.*;
  */
 public class Generator extends AtlantisBaseVisitor<Op> {
 
-	private String program;
+	private Program program;
 	/** The outcome of the checker phase. */
 	private CheckResult checkResult;
 	/** Register count, used to generate fresh registers. */
@@ -27,12 +31,15 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private int instrcount;
 	/** List of instruction */
 	private List<Op> instructions;
+
+	private List<String> errors;
 	
 	
 	/** Generates SprIl code for a given parse tree and a pre-computed checker result.*/
-	public String generate(ParseTree tree, CheckResult checkResult) {
-		this.program = "";
+	public Program generate(ParseTree tree, CheckResult checkResult) {
+		this.program = new Program();
 		this.checkResult = checkResult;
+		this.errors = new ArrayList<>();
 		this.regs = new ParseTreeProperty<Integer>();
 		this.regCount = 5;
 		this.instrcount = 0;
@@ -40,7 +47,15 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		tree.accept(this);
 		return program;
 	}
-	
+
+	public List<String> getErrors() {
+		return errors;
+	}
+
+	public boolean hasErrors() {
+		return !this.errors.isEmpty();
+	}
+
 	/**
 	 * Switches the state of a register
 	 */
@@ -55,6 +70,17 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private String toReg(int n) {
 		String result = n > -1 && n < 26 ? "reg" + String.valueOf((char)(n + 65)) : null;
 		return result;
+	}
+
+	private Reg addReg(int n) {
+		String id = null;
+		if (n >= 0 && n <= 25) {
+			id = "reg" + String.valueOf((char)(n + 65));
+		} else {
+			addError("Invalid character ('%s') for generating a register.",
+					String.valueOf((char)(n + 65)));
+		}
+		return new Reg(id);
 	}
 	
 	/**
@@ -295,4 +321,37 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Integer reg = nextReg();
 		return emit("Load", value.toString(), toReg(reg));
 	}
+
+	/** Records an error at a given parse tree node.
+	 * @param ctx the parse tree node at which the error occurred
+	 * @param message the error message
+	 * @param args arguments for the message, see {@link String#format}
+	 */
+	private void addError(ParserRuleContext ctx, String message, Object... args) {
+		addError(ctx.getStart(), message, args);
+	}
+
+	/** Records an error at a given token.
+	 * @param token the token at which the error occurred
+	 * @param message the error message
+	 * @param args arguments for the message, see {@link String#format}
+	 */
+	private void addError(Token token, String message, Object... args) {
+		int line = token.getLine();
+		int column = token.getCharPositionInLine();
+		message = String.format(message, args);
+		message = String.format("Line %d:%d - %s", line, column, message);
+		this.errors.add(message);
+	}
+
+	/**
+	 * Records a general error.
+	 * @param message the error message
+	 * @param args arguments for the message, see {@link String#format}
+	 */
+	private void addError(String message, Object... args) {
+		message = String.format(message, args);
+		this.errors.add(message);
+	}
+
 }
