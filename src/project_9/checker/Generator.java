@@ -29,10 +29,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private boolean[] regsInUse;
 	/** Integer to keep track of the amount of instructions*/
 	private int instrcount;
-	/** List of instruction */
-	private List<Op> instructions;
 	/** List of errors that occured during generating. */
-
 	private List<String> errors;
 	
 	
@@ -49,6 +46,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		if (hasErrors()) {
 			throw new ParseException(getErrors());
 		}
+		program.addOp(emit("EndProg"));
 		return program;
 	}
 

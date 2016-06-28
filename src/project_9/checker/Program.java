@@ -22,7 +22,32 @@ public class Program {
     }
 
     /**
-     * Sets an operation at a given line number within the program.
+     * Returns the operation at the given line number.
+     * @param i the line number.
+     * @return the operation at the given line number.
+     */
+    public Op getOpAt(int i) {
+        return this.operations.get(i);
+    }
+
+    /**
+     * Returns a given operation's line number.
+     * @param op operation whose line number is returned.
+     * @return a given operation's line number, -1 if the operation is not found.
+     */
+    public int getLineNumber(Op op) {
+        int lineNumber = -1;
+        for (int i = 0; i < this.operations.size(); i++) {
+            if (op.equals(this.operations.get(i))) {
+                lineNumber = i;
+                break;
+            }
+        }
+        return lineNumber;
+    }
+
+    /**
+     * Replaces an operation at a given line number within the program.
      * @param i The line number.
      * @param op The new operation that will replace the old one.
      */
@@ -44,15 +69,6 @@ public class Program {
      */
     public void addOp(Op op) {
     	operations.add(op);
-    }
-
-    /**
-     * Returns the operation at the given line number.
-     * @param i the line number.
-     * @return the operation at the given line number.
-     */
-    public Op getOpAt(int i) {
-        return this.operations.get(i);
     }
 
 }
