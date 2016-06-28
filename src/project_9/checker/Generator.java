@@ -1,17 +1,9 @@
 package project_9.checker;
 
-import org.antlr.v4.runtime.atn.SemanticContext.Operator;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
-
-import com.sun.org.apache.xpath.internal.compiler.OpCodes;
-
-import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
-import pp.AtlantisBaseVisitor;
-import pp.AtlantisLexer;
-import pp.AtlantisParser;
-import pp.Op;
-import pp.AtlantisParser.*;
+import project_9.atlantis.AtlantisBaseVisitor;
+import project_9.atlantis.AtlantisParser.*;
 
 
 /**
@@ -29,6 +21,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private ParseTreeProperty<Integer> regs;
 	/** Array to indicate which registers are in use (True = in use, False = not in use). */
 	private boolean[] regsInUse;
+	/** Integer to keep track of the amount of instructions*/
+	private int instrcount;
 	
 	
 	/** Generates SprIl code for a given parse tree and a pre-computed checker result.*/
@@ -37,6 +31,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		this.checkResult = checkResult;
 		this.regs = new ParseTreeProperty<Integer>();
 		this.regCount = 5;
+		this.instrcount = 0;
 		this.regsInUse = new boolean[regCount];
 		tree.accept(this);
 		return program;
@@ -65,6 +60,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private int nextReg() {
 		for (int i = 0; i < regCount; i++) {
 			if (!regsInUse[i]) {
+				switchReg(i);
 				return i;
 			}
 		}
@@ -92,6 +88,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	 */
 	private Op emit(String opCode, String... args) {
 		Op result = new Op(opCode, args);
+		this.instrcount++;
 		return result;
 	}
 	
@@ -120,9 +117,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	@Override
 	public Op visitAssStat(AssStatContext ctx) {
 		Op result = visit(ctx.expr());
-		visit(ctx.VAR());
+		visit(ctx.target());
 		Integer reg = regs.get(ctx.expr());
-		String target = "Diraddr " + offset(ctx.VAR()).toString();
+		String target = "Diraddr " + offset(ctx.target()).toString();
 		
 		emit("Store", toReg(reg), target);
 		switchReg(reg);
@@ -163,24 +160,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		switchReg(reg);
 		return result;
 	}
-	/* Can not find instructions for IO.
-	@Override
-	public Op visitInStat(InStatContext ctx) {
-		Integer target = nextReg();
-		String text = ctx.STR().getText().replaceAll("\"", "");		
-		Op result = emit(OpCode.write, new Str(text), target);
-		emit("store", /* args);
-		return result;
-	}
 	
-	@Override
-	public Op visitOutStat(OutStatContext ctx) {
-		Op result = visit(ctx.expr());
-		String text = ctx.STR().getText().replaceAll("\"", "");
-		emit("read", new Str(text), reg(ctx.expr()));
-		return result;
-	}
-	*/
 	@Override
 	public Op visitNotExpr(NotExprContext ctx) {
 		Op result = visit(ctx.expr());
@@ -195,12 +175,6 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		}
 		return result;
 	}
-	/* No easy way for powers in SpRIL
-	@Override
-	public Op visitHatExpr(HatExprContext ctx) {
-		return null;
-	}
-	*/
 	
 	@Override
 	public Op visitMultExpr(MultExprContext ctx) {
@@ -251,8 +225,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		visit(ctx.expr(1));
 		Integer op1 = regs.removeFrom(ctx.expr(0));
 		Integer op2 = regs.removeFrom(ctx.expr(1));
+		switchReg(op1);
+		switchReg(op2);
 		Integer target = nextReg();
-		String op;
+		String op = "";
 		
 		if (ctx.compOp().getText().equalsIgnoreCase("=")) {
 			op = "Equal";
@@ -268,18 +244,20 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			op = "NEq";
 		}
 		
-		emit("compute", op, op1, op2, target);
+		emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
 		return result;
 	}
 	
 	@Override
-	public Op visitBoolExpr(BoolExprContext ctx) {
+	public Op visitBoolOpExpr(BoolOpExprContext ctx) {
 		Op result = visit(ctx.expr(0));
 		visit(ctx.expr(1));
 		
-		Operand op1 = reg(ctx.expr(0));
-		Operand op2 = reg(ctx.expr(1));
-		Reg target = reg(ctx);
+		Integer op1 = regs.removeFrom(ctx.expr(0));
+		Integer op2 = regs.removeFrom(ctx.expr(1));
+		switchReg(op1);
+		switchReg(op2);
+		Integer target = nextReg();
 		String op;
 		
 		if (ctx.boolOp().AND() != null) {
@@ -287,39 +265,28 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		} else {
 			op = "Or";
 		}
-		emit("compute", op, op1, op2, target);
+		emit("compute", op, toReg(op1), toReg(op2), toReg(target));
 		return result;
 	}
 	
 	@Override
 	public Op visitParExpr(ParExprContext ctx) {
-		setReg(ctx, reg(ctx.expr()));
+		Integer reg = regs.removeFrom(ctx);
+		regs.put(ctx.expr(), reg); 
 		return visit(ctx.expr());
 	}
 	
 	@Override
-	public Op visitCallExpr(CallExprContext ctx) {
-		//Call a function
-		return null;
-	}
-	
-	@Override
 	public Op visitVarExpr(VarExprContext ctx) {
-		return emit("load", reg(ctx));
+		String text = ctx.VAR().getText();
+		Integer reg = nextReg();
+		return emit("Load", text, toReg(reg));
 	}
 	
 	@Override
 	public Op visitNumExpr(NumExprContext ctx) {
-		int value = Integer.parseInt(ctx.getText());
-		return emit("load", value/*registers*/);
-	}
-	
-	@Override
-	public Op visitBoolExr(BoolExrContext ctx) {
-		if (ctx.BOOL().getSymbol().equals(AtlantisLexer.TRUE)) {
-			return emit("load", TRUE_VALUE, reg(ctx));
-		} else {
-			return emit("load", FALSE_VALUE, reg(ctx));
-		}
+		Integer value = Integer.parseInt(ctx.getText());
+		Integer reg = nextReg();
+		return emit("Load", value.toString(), toReg(reg));
 	}
 }
