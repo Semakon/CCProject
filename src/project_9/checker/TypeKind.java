@@ -10,22 +10,6 @@ public enum TypeKind {
     BOOL,
 
     /** Integer kind */
-    INT,
-
-    /** String kind */
-    STR;
-
-    /** Returns the TypeKind's size in bytes. */
-    public int getSize() {
-        int size;
-        if (this == BOOL) {
-            size = 4;
-        } else if (this == INT) {
-            size = 4;
-        } else { // this == STR
-            size = 4; // TODO: replace placeholders with actual values;
-        }
-        return size;
-    }
+    INT;
 
 }

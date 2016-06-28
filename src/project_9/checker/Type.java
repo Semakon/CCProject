@@ -1,5 +1,7 @@
 package project_9.checker;
 
+import project_9.Utils;
+
 /**
  * Author:  Martijn
  * Date:    14-6-2016
@@ -12,8 +14,6 @@ abstract public class Type {
     public static final Type INT = new Int();
     /** Singleton instance of Boolean */
     public static final Type BOOL = new Bool();
-    /** Singleton instance of String */
-    public static final Type STR = new Str();
 
     public Type(TypeKind kind) {
         this.kind = kind;
@@ -39,7 +39,7 @@ abstract public class Type {
 
         @Override
         public int getSize() {
-            return getKind().getSize();
+            return Utils.BOOL_SIZE;
         }
 
         @Override
@@ -63,7 +63,7 @@ abstract public class Type {
 
         @Override
         public int getSize() {
-            return getKind().getSize();
+            return Utils.INT_SIZE;
         }
 
         @Override
@@ -74,30 +74,6 @@ abstract public class Type {
         @Override
         public String toString() {
             return "Integer";
-        }
-
-    }
-
-    /** Representation of the String type. */
-    static public class Str extends Type {
-
-        private Str() {
-            super(TypeKind.STR);
-        }
-
-        @Override
-        public int getSize() {
-            return getKind().getSize();
-        }
-
-        @Override
-        public boolean sameType(Object obj) {
-            return this == obj || obj instanceof Str;
-        }
-
-        @Override
-        public String toString() {
-            return "String";
         }
 
     }

@@ -27,7 +27,6 @@ expr    : not expr                      #notExpr
         | LPAR expr RPAR                #parExpr
         | VAR                           #varExpr
         | NUM                           #numExpr
-        | STR                           #strExpr
         | FALSE                         #falseExpr
         | TRUE                          #trueExpr
         ;
@@ -50,14 +49,12 @@ boolOp  : AND | OR;
 /* Data types */
 type    : BOOLEAN               #boolType
         | INT                   #intType
-        | STRING                #strType
         ;
 
 /* Reserved keywords */
 PROG:       P R O G R A M;
 BOOLEAN:    B O O L E A N;
 INT:        I N T E G E R;
-STRING:     S T R I N G;
 WHILE:      W H I L E;
 DO:         D O;
 IF:         I F;
@@ -75,16 +72,9 @@ GT:         '>';
 GE:         '>=';
 LT:         '<';
 LE:         '<=';
-COLON:      ':';
 SEMI:       ';';
-COMMA:      ',';
-DOT:        '.';
-DQUOTE:     '"';
-SQUOTE:     '\'';
 LBRACE:     '{';
 RBRACE:     '}';
-LSQ:        '[';
-RSQ:        ']';
 LPAR:       '(';
 RPAR:       ')';
 PLUS:       '+';
@@ -93,13 +83,11 @@ SLASH:      '/';
 MULT:       '*';
 AND:        '&&';
 OR:         '||';
-BSLASH:     '\\';
 HASH:       '#';
 
 /* Tokens with content */
 VAR:        LETTER (LETTER | DIGIT)*;
 NUM:        DIGIT+;
-STR:        DQUOTE .*? DQUOTE;
 BOOL:       TRUE | FALSE;
 
 fragment LETTER:    [A-Za-z];
