@@ -70,5 +70,18 @@ public class Program {
     public void addOp(Op op) {
     	operations.add(op);
     }
+    /**
+     * Generates the resulting SprIL code, based on operations. 
+     * @return result A string representation that can be put into a Haskell file.
+     */
+    public String generateCode() {
+    	String result = "program = [";
+    	for (Op op : operations) {
+    		result += op.getInstr() + ", ";
+    	}
+    	result = result.substring(0, result.length() - 1);
+    	result += "]";
+    	return result;
+    }
 
 }

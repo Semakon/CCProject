@@ -174,16 +174,16 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			this.instrcount = 0;
 			visit(ctx.block(1));
 			int elsecount = this.instrcount;
-			Op branch = emit("Branch", toReg(reg), "Rel", Integer.toString(thencount));
+			Op branch = emit("Branch", toReg(reg), "Rel " + Integer.toString(thencount));
 			program.addOpAt(branchloc,  branch);
-			Op jump = emit("Jump", "Rel", Integer.toString(elsecount));
+			Op jump = emit("Jump", "Rel " + Integer.toString(elsecount));
 			program.addOpAt(jumploc, jump);
 		} else {
 			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
 			visit(ctx.block(0));
 			int count = this.instrcount;
-			Op branch = emit("Branch", toReg(reg), "Rel", Integer.toString(count));
+			Op branch = emit("Branch", toReg(reg), "Rel " + Integer.toString(count));
 			program.addOpAt(branchloc, branch);
 		}
 		switchReg(reg);
@@ -201,9 +201,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		int endWhile = program.getOperations().size() - 1;
 		Integer reg = regs.removeFrom(ctx.expr());
 		regs.put(ctx, reg);
-		Op branch = emit("Branch", toReg(reg), "Abs", Integer.toString(endWhile));
+		Op branch = emit("Branch", toReg(reg), "Abs " + Integer.toString(endWhile));
 		program.addOpAt(jumpTo, branch);
-		Op jump = emit("Jump", "Abs", Integer.toBinaryString(jumpTo));
+		Op jump = emit("Jump", "Abs " + Integer.toBinaryString(jumpTo));
 		program.addOpAt(endWhile, jump);
 		switchReg(reg);
 		return result;
