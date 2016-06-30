@@ -41,8 +41,7 @@ public class TypeCheckerTest {
     }
 
     private ParseTree parse(String filename) throws ParseException, IOException {
-        File file = new File(Utils.BASE_DIR + filename + Utils.EXT);
-        return this.compiler.parse(file);
+        return this.compiler.parse(new File(Utils.BASE_DIR + filename + Utils.EXT));
     }
 
     private CheckResult check(ParseTree tree) throws ParseException {
@@ -50,8 +49,7 @@ public class TypeCheckerTest {
     }
 
     private CheckResult check(String filename) throws ParseException, IOException {
-        File file = new File(Utils.BASE_DIR + filename + Utils.EXT);
-        return this.compiler.check(file);
+        return this.compiler.check(new File(Utils.BASE_DIR + filename + Utils.EXT));
     }
 
 }

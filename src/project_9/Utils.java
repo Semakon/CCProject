@@ -1,5 +1,7 @@
 package project_9;
 
+import java.util.List;
+
 /**
  * Small utility class with some useful methods and configurable constants.
  *
@@ -21,7 +23,7 @@ public class Utils {
     public final static int BOOL_SIZE = 4;
 
     /** Static boolean that determines debugging */
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /**
      * Prints text to console if debugging is on.
@@ -31,6 +33,18 @@ public class Utils {
         if (DEBUG) {
             for (String s : text) {
                 System.out.println(s);
+            }
+        }
+    }
+
+    /**
+     * Prints text to console if debugging is on.
+     * @param list List of Text to be printed.
+     */
+    public static void pr(List<String> list) {
+        if (DEBUG) {
+            for (String s : list) {
+                pr(s);
             }
         }
     }

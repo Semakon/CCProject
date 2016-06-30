@@ -32,6 +32,7 @@ public class TypeChecker extends AtlantisBaseListener {
         this.scope = new Scope();
         new ParseTreeWalker().walk(this, tree);
         if (hasErrors()) {
+            Utils.pr(getErrors());
             throw new ParseException(getErrors());
         }
         return this.result;
@@ -64,11 +65,6 @@ public class TypeChecker extends AtlantisBaseListener {
         checkType(ctx.expr(), type(ctx.target()));
         setEntry(ctx.target(), entry(ctx.expr()));
         setEntry(ctx, entry(ctx.target()));
-    }
-
-    @Override
-    public void enterDeclStat(DeclStatContext ctx) {
-        this.scope.put(ctx.target().getText(), type(ctx.type()));
     }
 
     @Override
@@ -105,12 +101,14 @@ public class TypeChecker extends AtlantisBaseListener {
         Type type = this.scope.type(id);
 
         if (ctx.getParent() instanceof DeclStatContext) {
-            //TODO: in declStat zetten.
+            // target is part of a declaration
+            type = type(((DeclStatContext)ctx.getParent()).type());
+            this.scope.put(id, type);
         }
 
         if (type == null) {
             // type undefined
-            addError(ctx, String.format("Type of '%s' undefined", id));
+            addError(ctx, String.format("Type of '%s' is undefined", id));
         } else {
             setOffset(ctx, this.scope.offset(id));
             setType(ctx, type);
@@ -236,6 +234,9 @@ public class TypeChecker extends AtlantisBaseListener {
         if (actual == null) {
             throw new IllegalArgumentException("Missing inferred type of "
                     + ctx.getText());
+        }
+        if (expected == null) {
+            return;
         }
         if (!actual.sameType(expected)) {
             addError(ctx, "Expected type '%s' but found '%s'", expected, actual);
