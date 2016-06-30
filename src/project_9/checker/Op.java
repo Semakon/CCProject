@@ -76,24 +76,24 @@ public class Op {
 	}
 	
 	private void load(String...strings) {
-		this.instr = "Load "
-				+ strings[0] + " " 
+		this.instr = "Load ("
+				+ strings[0] + ") " 
 				+ strings[1];
 	}
 
 	private void jump(String...strings) {
-		this.instr = "Jump " + strings[0];
+		this.instr = "Jump (" + strings[0] + ")";
 	}
 	
 	private void branch(String...strings) {
 		this.instr = "Branch " + strings[0]
-				+ " " + strings[1];
+				+ " (" + strings[1] + ")";
 	}
 	
 	private void store(String...strings) {
 		this.instr = "Store "
-				+ strings[0] + " "
-				+ strings[1];
+				+ strings[0] + " ("
+				+ strings[1] + ")";
 	}
 	
 	private void push(String...strings) {
@@ -109,15 +109,15 @@ public class Op {
 	}
 	
 	private void read(String...strings) {
-		this.instr = "ReadInstr " + strings[0];
+		this.instr = "ReadInstr (" + strings[0] + ")";
 	}
 	
 	private void tas(String...strings) {
-		this.instr = "TestAndSet " + strings[0];
+		this.instr = "TestAndSet (" + strings[0] + ")";
 	}
 	
 	private void write(String...strings) {
 		this.instr = "WriteInstr " + strings[0]
-				+ " " + strings[1];
+				+ " (" + strings[1] + ")";
 	}
 }
