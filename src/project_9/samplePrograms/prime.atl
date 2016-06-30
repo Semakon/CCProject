@@ -1,7 +1,7 @@
 program prime;
 
 {
-    in("Number? ", x);
+    integer x = 13;
     integer i = 2;
     boolean stop = false;
     while not stop && i*i < x do {

@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import project_9.ParseException;
+import project_9.Utils;
 import project_9.atlantis.AtlantisBaseVisitor;
 import project_9.atlantis.AtlantisParser.*;
 
@@ -38,7 +39,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		this.program = new Program();
 		this.checkResult = checkResult;
 		this.errors = new ArrayList<>();
-		this.regs = new ParseTreeProperty<Integer>();
+		this.regs = new ParseTreeProperty<>();
 		this.regCount = 5;
 		this.instrcount = 0;
 		this.regsInUse = new boolean[regCount];
@@ -46,7 +47,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		if (hasErrors()) {
 			throw new ParseException(getErrors());
 		}
-		program.addOp(emit("EndProg"));
+		program.addOp(opGen("EndProg"));
 		return program;
 	}
 
@@ -70,16 +71,15 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	 * to a SprIl indication of a register.
 	 */
 	private String toReg(int n) {
-		String result = n > -1 && n < 26 ? "reg" + String.valueOf((char)(n + 65)) : null;
-		return result;
+		return n > -1 && n < 26 ? "reg" + String.valueOf((char)(n + 65)) : null;
 	}
 
-	private Reg addReg(int n) {
+	private Reg reg(int n) { // TODO: necessary?
 		String id = null;
 		if (n >= 0 && n <= 25) {
 			id = "reg" + String.valueOf((char)(n + 65));
 		} else {
-			addError("Invalid character ('%s') for generating a register.",
+			addError("Invalid character '%s' for generating a register.",
 					String.valueOf((char)(n + 65)));
 		}
 		return new Reg(id);
@@ -113,19 +113,20 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		}
 		return true;
 	}
+
 	/** Constructs an operation from the parameters
 	 * @param opCode
 	 * @param args
 	 * @return
 	 */
-	private Op emit(String opCode, String... args) {
+	private Op opGen(String opCode, String... args) {
 		Op result = new Op(opCode, args);
 		this.instrcount++;
 		return result;
 	}
 	
 	/** Retrieves the offset of a variable node from the checker*/
-	private Integer offset(ParseTree node) {
+	private int offset(ParseTree node) {
 		return this.checkResult.getOffset(node);
 	}
 	
@@ -138,7 +139,6 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	@Override
 	public Op visitBlock(BlockContext ctx) {
 		Op result = visit(ctx.stat(0));
-		
 		for (StatContext stat : ctx.stat()) {
 			if (stat == ctx.stat(0)) continue;
 			visit(stat);
@@ -149,20 +149,39 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	@Override
 	public Op visitAssStat(AssStatContext ctx) {
 		Op result = visit(ctx.expr());
-		visit(ctx.target());
-		Integer reg = regs.get(ctx.expr());
-		String target = "Diraddr " + offset(ctx.target()).toString();// TODO: calculate correct memory address
-		
-		Op store = emit("Store", toReg(reg), target);
+
+		int reg = regs.get(ctx.expr());
+		String target = "Diraddr " + offset(ctx.target());
+		Op store = opGen("Store", toReg(reg), target);
+
 		program.addOp(store);
 		switchReg(reg);
 		return result;
+	}
+
+	@Override
+	public Op visitDeclStat(DeclStatContext ctx) {
+		Op result = null;
+        if (ctx.expr() != null) {
+            // only used when declaration is also an assignment
+            result = visit(ctx.expr());
+
+            Integer reg = regs.get(ctx.expr());
+            String target = "Diraddr " + offset(ctx.target());
+
+            Utils.pr("reg: " + reg);
+
+            Op store = opGen("Store", toReg(reg), target);
+            program.addOp(store);
+            switchReg(reg);
+        }
+        return result;
 	}
 	
 	@Override
 	public Op visitIfStat(IfStatContext ctx) {
 		Op result = visit(ctx.expr());
-		Integer reg = regs.removeFrom(ctx.expr());
+		int reg = regs.removeFrom(ctx.expr());
 		regs.put(ctx, reg);
 		
 		if (ctx.ELSE() != null) {
@@ -174,16 +193,16 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			this.instrcount = 0;
 			visit(ctx.block(1));
 			int elsecount = this.instrcount;
-			Op branch = emit("Branch", toReg(reg), "Rel " + Integer.toString(thencount));
+			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(thencount));
 			program.addOpAt(branchloc,  branch);
-			Op jump = emit("Jump", "Rel " + Integer.toString(elsecount));
+			Op jump = opGen("Jump", "Rel " + Integer.toString(elsecount));
 			program.addOpAt(jumploc, jump);
 		} else {
 			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
 			visit(ctx.block(0));
 			int count = this.instrcount;
-			Op branch = emit("Branch", toReg(reg), "Rel " + Integer.toString(count));
+			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(count));
 			program.addOpAt(branchloc, branch);
 		}
 		switchReg(reg);
@@ -196,14 +215,14 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		this.instrcount = 0;
 		Op result = visit(ctx.expr());
 		Op block = visit(ctx.block());
-		Op nop = emit("Nop"); //<- Jump to here at end of while loop.
+		Op nop = opGen("Nop"); //<- Jump to here at end of while loop.
 		program.addOp(nop);
 		int endWhile = program.getOperations().size() - 1;
-		Integer reg = regs.removeFrom(ctx.expr());
+        int reg = regs.removeFrom(ctx.expr());
 		regs.put(ctx, reg);
-		Op branch = emit("Branch", toReg(reg), "Abs " + Integer.toString(endWhile));
+		Op branch = opGen("Branch", toReg(reg), "Abs " + Integer.toString(endWhile));
 		program.addOpAt(jumpTo, branch);
-		Op jump = emit("Jump", "Abs " + Integer.toBinaryString(jumpTo));
+		Op jump = opGen("Jump", "Abs " + Integer.toBinaryString(jumpTo));
 		program.addOpAt(endWhile, jump);
 		switchReg(reg);
 		return result;
@@ -212,15 +231,15 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	@Override
 	public Op visitNotExpr(NotExprContext ctx) {
 		Op result = visit(ctx.expr());
-		
-		Integer operand1 = regs.removeFrom(ctx.expr());
+
+        int operand1 = regs.removeFrom(ctx.expr());
 		regs.put(ctx, operand1);
-		Integer target = nextReg();
+        int target = nextReg();
 		if (ctx.not().MINUS() == null) {
-			Op compute = emit("Compute", "NEq", toReg(operand1), "reg0", toReg(target));
+			Op compute = opGen("Compute", "NEq", toReg(operand1), "reg0", toReg(target));
 			program.addOp(compute);
 		} else {
-			Op compute = emit("Compute", "Sub", "reg0", toReg(operand1), toReg(target));
+			Op compute = opGen("Compute", "Sub", "reg0", toReg(operand1), toReg(target));
 			program.addOp(compute);
 		}
 		return result;
@@ -230,12 +249,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitMultExpr(MultExprContext ctx) {
 		Op result = visit(ctx.expr(0));
 		visit(ctx.expr(1));
-		
-		Integer operand1 = regs.removeFrom(ctx.expr(0));
-		Integer operand2 = regs.removeFrom(ctx.expr(1));
+
+        int operand1 = regs.removeFrom(ctx.expr(0));
+        int operand2 = regs.removeFrom(ctx.expr(1));
 		switchReg(operand1);
 		switchReg(operand2);
-		Integer target = nextReg();
+        int target = nextReg();
 		String op;
 		
 		if (ctx.multOp().MULT() == null) {
@@ -244,7 +263,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			op = "Mul";
 		}
 		
-		Op compute = emit("Compute", op, toReg(operand1), toReg(operand2), toReg(target));
+		Op compute = opGen("Compute", op, toReg(operand1), toReg(operand2), toReg(target));
 		program.addOp(compute);
 		return result;
 	}
@@ -253,12 +272,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitPlusExpr(PlusExprContext ctx) {
 		Op result = visit(ctx.expr(0));
 		visit(ctx.expr(1));
-		
-		Integer op1 = regs.removeFrom(ctx.expr(0));
-		Integer op2 = regs.removeFrom(ctx.expr(1));
+
+        int op1 = regs.removeFrom(ctx.expr(0));
+        int op2 = regs.removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
-		Integer target = nextReg();
+        int target = nextReg();
 		String op;
 		
 		if (ctx.plusOp().PLUS() == null) {
@@ -266,20 +285,20 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		} else {
 			op = "Add";
 		}
-		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
+		Op compute = opGen("Compute", op, toReg(op1), toReg(op2), toReg(target));
 		program.addOp(compute);
-		return compute;
+		return result;
 	}
 	
 	@Override
 	public Op visitCompExpr(CompExprContext ctx) {
 		visit(ctx.expr(0));
 		visit(ctx.expr(1));
-		Integer op1 = regs.removeFrom(ctx.expr(0));
-		Integer op2 = regs.removeFrom(ctx.expr(1));
+        int op1 = regs.removeFrom(ctx.expr(0));
+        int op2 = regs.removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
-		Integer target = nextReg();
+        int target = nextReg();
 		String op = "";
 		
 		if (ctx.compOp().getText().equalsIgnoreCase("=")) {
@@ -296,7 +315,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			op = "NEq";
 		}
 		
-		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
+		Op compute = opGen("Compute", op, toReg(op1), toReg(op2), toReg(target));
 		program.addOp(compute);
 		return compute;
 	}
@@ -305,12 +324,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitBoolOpExpr(BoolOpExprContext ctx) {
 		Op result = visit(ctx.expr(0));
 		visit(ctx.expr(1));
-		
-		Integer op1 = regs.removeFrom(ctx.expr(0));
-		Integer op2 = regs.removeFrom(ctx.expr(1));
+
+        int op1 = regs.removeFrom(ctx.expr(0));
+        int op2 = regs.removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
-		Integer target = nextReg();
+        int target = nextReg();
 		String op;
 		
 		if (ctx.boolOp().AND() != null) {
@@ -318,35 +337,58 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		} else {
 			op = "Or";
 		}
-		Op compute = emit("Compute", op, toReg(op1), toReg(op2), toReg(target));
+		Op compute = opGen("Compute", op, toReg(op1), toReg(op2), toReg(target));
 		program.addOp(compute);
-		return compute;
+		return result;
 	}
 	
 	@Override
 	public Op visitParExpr(ParExprContext ctx) {
-		Integer reg = regs.removeFrom(ctx);
+        int reg = regs.removeFrom(ctx);
 		regs.put(ctx.expr(), reg); 
 		return visit(ctx.expr());
 	}
 	
 	@Override
 	public Op visitVarExpr(VarExprContext ctx) {
-		String text = ctx.VAR().getText();
-		Integer reg = nextReg();
-		Op emit = emit("Load", text, toReg(reg)); //TODO: Find correct memory address for var
-		program.addOp(emit);
-		return emit;
+		int reg = nextReg();
+        int offset = this.checkResult.getOffset(ctx);
+		Op result = opGen("Load", "DirAddr " + offset, toReg(reg));
+
+        regs.put(ctx, reg);
+		program.addOp(result);
+		return result;
 	}
 	
 	@Override
 	public Op visitNumExpr(NumExprContext ctx) {
-		Integer value = Integer.parseInt(ctx.getText());
-		Integer reg = nextReg();
-		Op emit = emit("Ldconst", value.toString(), toReg(reg));
-		program.addOp(emit);
-		return emit;
+		int reg = nextReg();
+		Op result = opGen("Ldconst", ctx.getText(), toReg(reg));
+
+        regs.put(ctx, reg);
+		program.addOp(result);
+		return result;
 	}
+
+    @Override
+    public Op visitFalseExpr(FalseExprContext ctx) {
+        int reg = nextReg();
+        Op result = opGen("Ldconst", Utils.TRUE_VALUE, toReg(reg));
+
+        regs.put(ctx, reg);
+        program.addOp(result);
+        return result;
+    }
+
+    @Override
+    public Op visitTrueExpr(TrueExprContext ctx) {
+        int reg = nextReg();
+        Op result = opGen("Ldconst", Utils.TRUE_VALUE, toReg(reg));
+
+        regs.put(ctx, reg);
+        program.addOp(result);
+        return result;
+    }
 
 	/** Records an error at a given parse tree node.
 	 * @param ctx the parse tree node at which the error occurred

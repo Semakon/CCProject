@@ -2,7 +2,8 @@ program basic;
 
 {
     integer x = 5;
-    boolean z = false;
-    x = 6;
-    z = true;
+    integer y;
+    y = x;
+    boolean wat = true;
+    wat = false;
 }

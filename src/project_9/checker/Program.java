@@ -63,6 +63,7 @@ public class Program {
     public void addOpAt(int i, Op op) {
     	operations.add(i, op);
     }
+
     /**
      * Adds an operation to the end of the program.
      * @param op The operation to be added.
@@ -70,16 +71,33 @@ public class Program {
     public void addOp(Op op) {
     	operations.add(op);
     }
+
     /**
-     * Generates the resulting SprIL code, based on operations. 
-     * @return result A string representation that can be put into a Haskell file.
+     * Generates a list of String operations to be put in a haskell file.
+     * @return A List of Strings that can be put in a haskell file.
      */
-    public String generateCode() {
+    public List<String> generateCode() {
+        List<String> code = new ArrayList<>();
+        code.add("prog :: [Instruction]");
+        code.add("prog = [");
+        code.add("\t\t  " + operations.get(0).getInstr());
+        for (int i = 1; i < operations.size(); i++) {
+            code.add("\t\t, " + operations.get(i).getInstr());
+        }
+        code.add("\t   ]");
+        return code;
+    }
+
+    /**
+     * Creates a String representation of this program.
+     * @return A string representation of this program.
+     */
+    public String toString() {
     	String result = "program = [";
-    	for (Op op : operations) {
-    		result += op.getInstr() + ", ";
-    	}
-    	result = result.substring(0, result.length() - 1);
+        for (Op op : operations) {
+            result += op.getInstr() + ", ";
+        }
+    	result = result.substring(0, result.length() - 2); // cut off ", "
     	result += "]";
     	return result;
     }

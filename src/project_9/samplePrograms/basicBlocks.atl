@@ -3,7 +3,7 @@ program basicBlocks;
 {
     integer x = 5;
     integer i = 0;
-    while x >= 0 do {
+    while x >= i do {
         i = i + 1;
     };
 

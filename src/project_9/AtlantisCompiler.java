@@ -5,6 +5,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import project_9.atlantis.AtlantisLexer;
 import project_9.atlantis.AtlantisParser;
 import project_9.checker.CheckResult;
+import project_9.checker.Generator;
+import project_9.checker.Program;
 import project_9.checker.TypeChecker;
 
 import java.io.File;
@@ -23,14 +25,23 @@ public class AtlantisCompiler {
     /** The fixed TypeChecker of this compiler. */
     private final TypeChecker checker;
 
+    /** The fixed Generator of this compiler. */
+    private final Generator generator;
+
     /** This class' constructor. */
     public AtlantisCompiler() {
         this.checker = new TypeChecker();
+        this.generator = new Generator();
     }
 
     /** Returns the singleton instance of this class. */
     public static AtlantisCompiler instance() {
         return instance;
+    }
+
+    public Program compile(File file) throws IOException, ParseException {
+        ParseTree tree = parse(file);
+        return this.generator.generate(tree, check(tree));
     }
 
     /** Type checks a given Atlantis string. */

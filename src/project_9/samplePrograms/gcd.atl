@@ -1,8 +1,8 @@
 program gcd;
 
 {
-    in("x? ", x);
-    in("y? ", x);
+    integer x = 14;
+    integer y = 56;
     while x <> y do {
         If x > y then {
             x = x - y;

@@ -69,7 +69,7 @@ public class TypeChecker extends AtlantisBaseListener {
 
     @Override
     public void exitDeclStat(DeclStatContext ctx) {
-        checkType(ctx.type(), type(ctx.target()));
+        checkType(ctx.target(), type(ctx.type()));
         if (ctx.expr() != null) {
             checkType(ctx.expr(), type(ctx.type()));
             setEntry(ctx.target(), ctx.expr());
@@ -93,6 +93,11 @@ public class TypeChecker extends AtlantisBaseListener {
     public void exitForkStat(ForkStatContext ctx) {
         checkType(ctx.expr(), Type.INT);
         setEntry(ctx, entry(ctx.expr()));
+    }
+
+    @Override
+    public void exitPrintStat(PrintStatContext ctx) {
+        setEntry(ctx, ctx.expr());
     }
 
     @Override

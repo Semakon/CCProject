@@ -15,6 +15,7 @@ stat    : target ASS expr               #assStat
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
         | FORK RPAR expr LPAR block     #forkStat
+        | PRINT expr                    #printStat
         ;
 
 /* Target variable */
@@ -67,6 +68,7 @@ TRUE:       T R U E;
 FALSE:      F A L S E;
 NOT:        N O T;
 FORK:       F O R K;
+PRINT:      P R I N T;
 
 /* Symbols */
 ASS:        '=';

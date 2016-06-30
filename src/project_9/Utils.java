@@ -1,5 +1,12 @@
 package project_9;
 
+import project_9.checker.Program;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -10,20 +17,32 @@ import java.util.List;
  */
 public class Utils {
 
-    /** Base directory of sample programs  */
+    /** Base directory of sample programs */
     public static final String BASE_DIR = "src/project_9/samplePrograms/";
 
     /** Extension of Atlantis programs */
     public final static String EXT = ".atl";
 
+    /** Base directory of generated Haskell programs  */
+    public static final String BASE_HS_DIR = "src/project_9/generatedHaskell/";
+
+    /** Extension of Haskell programs */
+    private final static String HS_EXT = ".hs";
+
+    /** String representation of the true value in Sprockell */
+    public final static String TRUE_VALUE = "1";
+
+    /** STring representation of the false value in Sprockell */
+    public final static String FALSE_VALUE = "0";
+
     /** Size of a integer type in bytes. */
-    public final static int INT_SIZE = 4;
+    public final static int INT_SIZE = 1;
 
     /** Size of a boolean type in bytes. */
-    public final static int BOOL_SIZE = 4;
+    public final static int BOOL_SIZE = 1;
 
     /** Static boolean that determines debugging */
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     /**
      * Prints text to console if debugging is on.
@@ -46,6 +65,21 @@ public class Utils {
             for (String s : list) {
                 pr(s);
             }
+        }
+    }
+
+    /**
+     * Creates a Haskell file of a given program with a given filename.
+     * @param prog Program that is to be made into a Haskell file.
+     * @param filename Name of the new Haskell file.
+     */
+    public static void toHaskellFile(Program prog, String filename) {
+        try {
+            List<String> code = prog.generateCode();
+            Path file = Paths.get(BASE_HS_DIR + filename + HS_EXT);
+            Files.write(file, code, Charset.forName("UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
