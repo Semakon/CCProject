@@ -9,7 +9,8 @@ block   : LBRACE (stat SEMI)+ RBRACE
         ;
 
 /* Statements */
-stat    : type? target ASS expr         #assStat
+stat    : target ASS expr               #assStat
+        | type target (ASS expr)?       #declStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
@@ -17,7 +18,7 @@ stat    : type? target ASS expr         #assStat
         ;
 
 /* Target variable */
-target  : VAR               #varTarget
+target  : VAR                           #varTarget
         ;
 
 /* Expressions */
@@ -49,8 +50,8 @@ compOp  : EQ | NE | GT | GE | LT | LE;
 boolOp  : AND | OR;
 
 /* Data types */
-type    : BOOLEAN               #boolType
-        | INT                   #intType
+type    : BOOLEAN                       #boolType
+        | INT                           #intType
         ;
 
 /* Reserved keywords */
@@ -96,7 +97,7 @@ BOOL:       TRUE | FALSE;
 fragment LETTER:    [A-Za-z];
 fragment DIGIT:     [0-9];
 
-/* Skips */
+/* Skipped content */
 COMMENT:    HASH .*? HASH -> skip;
 WS:         [ \t\n\r] -> skip;
 

@@ -2,6 +2,10 @@ program basicFail;
 
 {
     integer x = false;
-    boolean y = "wrong";
-    string z = 5;
+    x = true;
+    x = 5;
+    boolean y = 5;
+    y = 7;
+    y = true;
+    z = 3;
 }

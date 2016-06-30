@@ -50,7 +50,7 @@ public class AtlantisCompiler {
 
     /** Compiles a given Atlantis String into a parse tree. */
     public ParseTree parse(String text) throws ParseException {
-        return parse (new ANTLRInputStream(text));
+        return parse(new ANTLRInputStream(text));
     }
 
     /** Compiles a given Atlantis file into a parse tree. */

@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import project_9.ParseException;
+import project_9.Utils;
 import project_9.atlantis.AtlantisBaseListener;
 import project_9.atlantis.AtlantisParser.*;
 
@@ -60,24 +61,24 @@ public class TypeChecker extends AtlantisBaseListener {
 
     @Override
     public void exitAssStat(AssStatContext ctx) {
-        String target = ctx.target().getText();
-        Type type = this.scope.type(target);
-
-        if (type == null) {
-            if (ctx.type() == null) {
-                // type undefined
-                addError(ctx, "Type of variable '%s' is not yet defined", target);
-            } else {
-                // set type of target variable
-                type = type(ctx.type());
-                this.scope.put(target, type);
-                setType(ctx.target(), type);
-            }
-        }
-
-        checkType(ctx.expr(), type);
+        checkType(ctx.expr(), type(ctx.target()));
         setEntry(ctx.target(), entry(ctx.expr()));
         setEntry(ctx, entry(ctx.target()));
+    }
+
+    @Override
+    public void enterDeclStat(DeclStatContext ctx) {
+        this.scope.put(ctx.target().getText(), type(ctx.type()));
+    }
+
+    @Override
+    public void exitDeclStat(DeclStatContext ctx) {
+        checkType(ctx.type(), type(ctx.target()));
+        if (ctx.expr() != null) {
+            checkType(ctx.expr(), type(ctx.type()));
+            setEntry(ctx.target(), ctx.expr());
+        }
+        setEntry(ctx, ctx.target());
     }
 
     @Override
@@ -101,9 +102,20 @@ public class TypeChecker extends AtlantisBaseListener {
     @Override
     public void exitVarTarget(VarTargetContext ctx) {
         String id = ctx.getText();
-        setOffset(ctx, this.scope.offset(id));
-        setType(ctx, this.scope.type(id));
-        setEntry(ctx, ctx);
+        Type type = this.scope.type(id);
+
+        if (ctx.getParent() instanceof DeclStatContext) {
+            //TODO: in declStat zetten.
+        }
+
+        if (type == null) {
+            // type undefined
+            addError(ctx, String.format("Type of '%s' undefined", id));
+        } else {
+            setOffset(ctx, this.scope.offset(id));
+            setType(ctx, type);
+            setEntry(ctx, ctx);
+        }
     }
 
     @Override

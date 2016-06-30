@@ -2,9 +2,7 @@ program basic;
 
 {
     integer x = 5;
-    string y = "random";
     boolean z = false;
     x = 6;
-    y = "renamed";
     z = true;
 }

@@ -9,7 +9,7 @@ package project_9;
 public class Utils {
 
     /** Base directory of sample programs  */
-    public static final String BASE_DIR = "C:\\Users\\Martijn\\IdeaProjects\\CCProject\\src\\project_9\\samplePrograms";
+    public static final String BASE_DIR = "src/project_9/samplePrograms/";
 
     /** Extension of Atlantis programs */
     public final static String EXT = ".atl";
