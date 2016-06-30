@@ -1,9 +1,9 @@
 program basic;
 
 {
-    integer x = 5;
-    integer y;
-    y = x;
-    boolean wat = true;
-    wat = false;
+    integer x = 0;
+    if true then {
+        x = 3 + 2;
+    };
+    integer y = 2;
 }

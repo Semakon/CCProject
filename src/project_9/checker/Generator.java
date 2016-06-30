@@ -1,10 +1,5 @@
 package project_9.checker;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import project_9.ParseException;
@@ -30,33 +25,19 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private boolean[] regsInUse;
 	/** Integer to keep track of the amount of instructions*/
 	private int instrcount;
-	/** List of errors that occured during generating. */
-	private List<String> errors;
 	
 	
 	/** Generates SprIl code for a given parse tree and a pre-computed checker result.*/
 	public Program generate(ParseTree tree, CheckResult checkResult) throws ParseException {
 		this.program = new Program();
 		this.checkResult = checkResult;
-		this.errors = new ArrayList<>();
 		this.regs = new ParseTreeProperty<>();
 		this.regCount = 5;
 		this.instrcount = 0;
 		this.regsInUse = new boolean[regCount];
 		tree.accept(this);
-		if (hasErrors()) {
-			throw new ParseException(getErrors());
-		}
 		program.addOp(opGen("EndProg"));
 		return program;
-	}
-
-	public List<String> getErrors() {
-		return errors;
-	}
-
-	public boolean hasErrors() {
-		return !this.errors.isEmpty();
 	}
 
 	/**
@@ -72,17 +53,6 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	 */
 	private String toReg(int n) {
 		return n > -1 && n < 26 ? "reg" + String.valueOf((char)(n + 65)) : null;
-	}
-
-	private Reg reg(int n) { // TODO: necessary?
-		String id = null;
-		if (n >= 0 && n <= 25) {
-			id = "reg" + String.valueOf((char)(n + 65));
-		} else {
-			addError("Invalid character '%s' for generating a register.",
-					String.valueOf((char)(n + 65)));
-		}
-		return new Reg(id);
 	}
 	
 	/**
@@ -115,9 +85,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	}
 
 	/** Constructs an operation from the parameters
-	 * @param opCode
-	 * @param args
-	 * @return
+	 * @param opCode The main instruction of the operation.
+	 * @param args The arguments of the operation.
+	 * @return An Op constructed from the given parameters.
 	 */
 	private Op opGen(String opCode, String... args) {
 		Op result = new Op(opCode, args);
@@ -151,7 +121,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr());
 
 		int reg = regs.get(ctx.expr());
-		String target = "Diraddr " + offset(ctx.target());
+		String target = "DirAddr " + offset(ctx.target());
 		Op store = opGen("Store", toReg(reg), target);
 
 		program.addOp(store);
@@ -167,9 +137,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
             result = visit(ctx.expr());
 
             Integer reg = regs.get(ctx.expr());
-            String target = "Diraddr " + offset(ctx.target());
-
-            Utils.pr("reg: " + reg);
+            String target = "DirAddr " + offset(ctx.target());
 
             Op store = opGen("Store", toReg(reg), target);
             program.addOp(store);
@@ -182,7 +150,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitIfStat(IfStatContext ctx) {
 		Op result = visit(ctx.expr());
 		int reg = regs.removeFrom(ctx.expr());
-		regs.put(ctx, reg);
+        regs.put(ctx, reg);
 		
 		if (ctx.ELSE() != null) {
 			int branchloc = program.getOperations().size();
@@ -215,11 +183,13 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		this.instrcount = 0;
 		Op result = visit(ctx.expr());
 		Op block = visit(ctx.block());
+
 		Op nop = opGen("Nop"); //<- Jump to here at end of while loop.
 		program.addOp(nop);
 		int endWhile = program.getOperations().size() - 1;
         int reg = regs.removeFrom(ctx.expr());
 		regs.put(ctx, reg);
+
 		Op branch = opGen("Branch", toReg(reg), "Abs " + Integer.toString(endWhile));
 		program.addOpAt(jumpTo, branch);
 		Op jump = opGen("Jump", "Abs " + Integer.toBinaryString(jumpTo));
@@ -233,8 +203,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr());
 
         int operand1 = regs.removeFrom(ctx.expr());
-		regs.put(ctx, operand1);
         int target = nextReg();
+        regs.put(ctx, target);
+
 		if (ctx.not().MINUS() == null) {
 			Op compute = opGen("Compute", "NEq", toReg(operand1), "reg0", toReg(target));
 			program.addOp(compute);
@@ -254,15 +225,17 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         int operand2 = regs.removeFrom(ctx.expr(1));
 		switchReg(operand1);
 		switchReg(operand2);
+
         int target = nextReg();
+        regs.put(ctx, target);
+
 		String op;
-		
 		if (ctx.multOp().MULT() == null) {
 			op = "Div";
 		} else {
 			op = "Mul";
 		}
-		
+
 		Op compute = opGen("Compute", op, toReg(operand1), toReg(operand2), toReg(target));
 		program.addOp(compute);
 		return result;
@@ -277,14 +250,17 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         int op2 = regs.removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
+
         int target = nextReg();
+        regs.put(ctx, target);
+
 		String op;
-		
 		if (ctx.plusOp().PLUS() == null) {
 			op = "Sub";
 		} else {
 			op = "Add";
 		}
+
 		Op compute = opGen("Compute", op, toReg(op1), toReg(op2), toReg(target));
 		program.addOp(compute);
 		return result;
@@ -299,8 +275,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		switchReg(op1);
 		switchReg(op2);
         int target = nextReg();
+        regs.put(ctx, target);
+
 		String op = "";
-		
 		if (ctx.compOp().getText().equalsIgnoreCase("=")) {
 			op = "Equal";
 		} else if (ctx.compOp().getText().equalsIgnoreCase(">=")) {
@@ -330,13 +307,15 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		switchReg(op1);
 		switchReg(op2);
         int target = nextReg();
+        regs.put(ctx, target);
+
 		String op;
-		
 		if (ctx.boolOp().AND() != null) {
 			op = "And";
 		} else {
 			op = "Or";
 		}
+
 		Op compute = opGen("Compute", op, toReg(op1), toReg(op2), toReg(target));
 		program.addOp(compute);
 		return result;
@@ -363,7 +342,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	@Override
 	public Op visitNumExpr(NumExprContext ctx) {
 		int reg = nextReg();
-		Op result = opGen("Ldconst", ctx.getText(), toReg(reg));
+		Op result = opGen("LdConst", ctx.getText(), toReg(reg));
 
         regs.put(ctx, reg);
 		program.addOp(result);
@@ -373,7 +352,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
     @Override
     public Op visitFalseExpr(FalseExprContext ctx) {
         int reg = nextReg();
-        Op result = opGen("Ldconst", Utils.TRUE_VALUE, toReg(reg));
+        Op result = opGen("LdConst", Utils.TRUE_VALUE, toReg(reg));
 
         regs.put(ctx, reg);
         program.addOp(result);
@@ -383,43 +362,11 @@ public class Generator extends AtlantisBaseVisitor<Op> {
     @Override
     public Op visitTrueExpr(TrueExprContext ctx) {
         int reg = nextReg();
-        Op result = opGen("Ldconst", Utils.TRUE_VALUE, toReg(reg));
+        Op result = opGen("LdConst", Utils.TRUE_VALUE, toReg(reg));
 
         regs.put(ctx, reg);
         program.addOp(result);
         return result;
     }
-
-	/** Records an error at a given parse tree node.
-	 * @param ctx the parse tree node at which the error occurred
-	 * @param message the error message
-	 * @param args arguments for the message, see {@link String#format}
-	 */
-	private void addError(ParserRuleContext ctx, String message, Object... args) {
-		addError(ctx.getStart(), message, args);
-	}
-
-	/** Records an error at a given token.
-	 * @param token the token at which the error occurred
-	 * @param message the error message
-	 * @param args arguments for the message, see {@link String#format}
-	 */
-	private void addError(Token token, String message, Object... args) {
-		int line = token.getLine();
-		int column = token.getCharPositionInLine();
-		message = String.format(message, args);
-		message = String.format("Line %d:%d - %s", line, column, message);
-		this.errors.add(message);
-	}
-
-	/**
-	 * Records a general error.
-	 * @param message the error message
-	 * @param args arguments for the message, see {@link String#format}
-	 */
-	private void addError(String message, Object... args) {
-		message = String.format(message, args);
-		this.errors.add(message);
-	}
 
 }

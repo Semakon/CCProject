@@ -75,7 +75,7 @@ public class Utils {
      */
     public static void toHaskellFile(Program prog, String filename) {
         try {
-            List<String> code = prog.generateCode();
+            List<String> code = prog.generateCode(filename);
             Path file = Paths.get(BASE_HS_DIR + filename + HS_EXT);
             Files.write(file, code, Charset.forName("UTF-8"));
         } catch (IOException e) {

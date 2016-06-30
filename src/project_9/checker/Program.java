@@ -1,6 +1,7 @@
 package project_9.checker;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -76,8 +77,18 @@ public class Program {
      * Generates a list of String operations to be put in a haskell file.
      * @return A List of Strings that can be put in a haskell file.
      */
-    public List<String> generateCode() {
+    public List<String> generateCode(String filename) {
         List<String> code = new ArrayList<>();
+
+        code.add("module " + filename + " where");
+        code.add("");
+        code.add("import BasicFunctions");
+        code.add("import HardwareTypes");
+        code.add("import Sprockell");
+        code.add("import System");
+        code.add("import Simulation");
+        code.add("");
+
         code.add("prog :: [Instruction]");
         code.add("prog = [");
         code.add("\t\t  " + operations.get(0).getInstr());
