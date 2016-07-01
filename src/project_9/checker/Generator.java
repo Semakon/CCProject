@@ -156,6 +156,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr());
 		int reg = regs.removeFrom(ctx.expr());
         regs.put(ctx, reg);
+
+		// invert comparison to satisfy branch
+		Op compute = opGen("Compute", "Equal", toReg(reg), "reg0", toReg(reg));
+		program.addOp(compute);
 		
 		if (ctx.ELSE() != null) {
 			int branchloc = program.getOperations().size();
@@ -163,10 +167,13 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			visit(ctx.block(0));
 
 			int jumploc = program.getOperations().size() + 1;
+
+			// adjust for two extra instructions
 			int thencount = this.instrcount + 2;
 			this.instrcount = 0;
 			visit(ctx.block(1));
 
+			// adjust for extra instruction
 			int elsecount = this.instrcount + 1;
 
 			// emit branch to then/else
@@ -180,6 +187,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
 			visit(ctx.block(0));
+
+			// adjust for extra instruction
 			int count = this.instrcount + 1;
 
 			// emit jump to end of if-statement
@@ -192,21 +201,31 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitWhileStat(WhileStatContext ctx) {
-		int jumpTo = program.getOperations().size();
-		this.instrcount = 0;
+		int jumpLoc = program.getOperations().size();
 		Op result = visit(ctx.expr());
+		int reg = regs.removeFrom(ctx.expr());
+		regs.put(ctx, reg);
+
+		// invert comparison to satisfy branch
+		Op compute = opGen("Compute", "Equal", toReg(reg), "reg0", toReg(reg));
+		program.addOp(compute);
+
+		int jumpTo = program.getOperations().size();
+
+		this.instrcount = 0;
 		visit(ctx.block());
+		int endWhile = instrcount + 2;
 
 		Op nop = opGen("Nop"); //<- Jump to here at end of while loop.
 		program.addOp(nop);
-		int endWhile = program.getOperations().size() - 1;
-        int reg = regs.removeFrom(ctx.expr());
-		regs.put(ctx, reg);
 
-		Op branch = opGen("Branch", toReg(reg), "Abs " + Integer.toString(endWhile));
+		Utils.pr("Endwhile: " + endWhile, "Jumpto: " + jumpTo, "JumpLoc: " + jumpLoc);
+
+		Op branch = opGen("Branch", toReg(reg), "Rel " + endWhile);
 		program.addOpAt(jumpTo, branch);
-		Op jump = opGen("Jump", "Abs " + Integer.toBinaryString(jumpTo));
-		program.addOpAt(endWhile, jump);
+
+		Op jump = opGen("Jump", "Abs " + jumpTo);
+		program.addOpAt(jumpLoc, jump);
 		switchReg(reg);
 		return result;
 	}
@@ -220,7 +239,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         regs.put(ctx, target);
 
 		if (ctx.not().MINUS() == null) {
-			Op compute = opGen("Compute", "NEq", toReg(operand1), "reg0", toReg(target));
+			Op compute = opGen("Compute", "Equal", toReg(operand1), "reg0", toReg(target));
 			program.addOp(compute);
 		} else {
 			Op compute = opGen("Compute", "Sub", "reg0", toReg(operand1), toReg(target));

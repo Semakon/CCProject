@@ -6,9 +6,4 @@ program basicBlocks;
     while x >= i do {
         i = i + 1;
     };
-
-    boolean six = false;
-    if i == 6 then {
-        six = true;
-    };
 }
