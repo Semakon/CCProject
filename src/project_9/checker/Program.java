@@ -91,11 +91,11 @@ public class Program {
 
         code.add("prog :: [Instruction]");
         code.add("prog = [");
-        code.add("\t\t  " + operations.get(0).getInstr());
+        code.add("          " + operations.get(0).getInstr());
         for (int i = 1; i < operations.size(); i++) {
-            code.add("\t\t, " + operations.get(i).getInstr());
+            code.add("        , " + operations.get(i).getInstr());
         }
-        code.add("\t   ]");
+        code.add("       ]");
         return code;
     }
 

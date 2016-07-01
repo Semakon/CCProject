@@ -1,0 +1,12 @@
+program basic;
+
+{
+    integer x = 1;
+    integer y = 2;
+    integer z;
+    if x == y then {
+        z = x + y;
+    } else {
+        z = x * y;
+    };
+}

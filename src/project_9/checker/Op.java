@@ -11,7 +11,7 @@ public class Op {
 		case "Compute":
 			compute(strings);
 			break;
-		case "Ldconst":
+		case "LdConst":
 			ldconst(strings);
 			break;
 		case "Load":

@@ -1,11 +1,16 @@
 package project_9.checker;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import project_9.ParseException;
 import project_9.Utils;
 import project_9.atlantis.AtlantisBaseVisitor;
 import project_9.atlantis.AtlantisParser.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -25,6 +30,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private boolean[] regsInUse;
 	/** Integer to keep track of the amount of instructions*/
 	private int instrcount;
+
+	private List<String> errors;
 	
 	
 	/** Generates SprIl code for a given parse tree and a pre-computed checker result.*/
@@ -32,12 +39,24 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		this.program = new Program();
 		this.checkResult = checkResult;
 		this.regs = new ParseTreeProperty<>();
+		this.errors = new ArrayList<>();
 		this.regCount = 5;
 		this.instrcount = 0;
 		this.regsInUse = new boolean[regCount];
 		tree.accept(this);
 		program.addOp(opGen("EndProg"));
+		if (hasErrors()) {
+			throw new ParseException(getErrors());
+		}
 		return program;
+	}
+
+	public List<String> getErrors() {
+		return errors;
+	}
+
+	public boolean hasErrors() {
+		return !this.errors.isEmpty();
 	}
 
 	/**
@@ -59,29 +78,15 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	 * Indicates the next free register
 	 * @return The Integer for the next free register (starting at 0).
 	 */
-	private int nextReg() {
+	private int nextReg(ParserRuleContext ctx) {
 		for (int i = 0; i < regCount; i++) {
 			if (!regsInUse[i]) {
 				switchReg(i);
 				return i;
 			}
 		}
+		addError(ctx, "Too many registers are used");
 		return -1;
-	}
-	
-	
-	/**
-	 * Method to check whether all registers are in use.
-	 * @return 	False if there is a "free" register, 
-	 * 			True if otherwise.
-	 */
-	private boolean fullRegs() {
-		for (int i = 0; i < regCount; i++) {
-			if (!regsInUse[i]) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	/** Constructs an operation from the parameters
@@ -155,14 +160,18 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		if (ctx.ELSE() != null) {
 			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
-			visit(ctx.block(0));
-			int jumploc = program.getOperations().size() + 1;
-			int thencount = this.instrcount;
-			this.instrcount = 0;
 			visit(ctx.block(1));
-			int elsecount = this.instrcount;
+
+			int jumploc = program.getOperations().size() + 1;
+			int thencount = this.instrcount + 2;
+			this.instrcount = 0;
+			visit(ctx.block(0));
+
+			int elsecount = this.instrcount + 1;
+
 			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(thencount));
 			program.addOpAt(branchloc,  branch);
+
 			Op jump = opGen("Jump", "Rel " + Integer.toString(elsecount));
 			program.addOpAt(jumploc, jump);
 		} else {
@@ -182,7 +191,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		int jumpTo = program.getOperations().size();
 		this.instrcount = 0;
 		Op result = visit(ctx.expr());
-		Op block = visit(ctx.block());
+		visit(ctx.block());
 
 		Op nop = opGen("Nop"); //<- Jump to here at end of while loop.
 		program.addOp(nop);
@@ -203,7 +212,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr());
 
         int operand1 = regs.removeFrom(ctx.expr());
-        int target = nextReg();
+        int target = nextReg(ctx);
         regs.put(ctx, target);
 
 		if (ctx.not().MINUS() == null) {
@@ -226,7 +235,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		switchReg(operand1);
 		switchReg(operand2);
 
-        int target = nextReg();
+        int target = nextReg(ctx);
         regs.put(ctx, target);
 
 		String op;
@@ -251,7 +260,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		switchReg(op1);
 		switchReg(op2);
 
-        int target = nextReg();
+        int target = nextReg(ctx);
         regs.put(ctx, target);
 
 		String op;
@@ -274,11 +283,11 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         int op2 = regs.removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
-        int target = nextReg();
+        int target = nextReg(ctx);
         regs.put(ctx, target);
 
 		String op = "";
-		if (ctx.compOp().getText().equalsIgnoreCase("=")) {
+		if (ctx.compOp().getText().equalsIgnoreCase("==")) {
 			op = "Equal";
 		} else if (ctx.compOp().getText().equalsIgnoreCase(">=")) {
 			op = "GtE";
@@ -306,7 +315,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         int op2 = regs.removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
-        int target = nextReg();
+        int target = nextReg(ctx);
         regs.put(ctx, target);
 
 		String op;
@@ -330,7 +339,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitVarExpr(VarExprContext ctx) {
-		int reg = nextReg();
+		int reg = nextReg(ctx);
         int offset = this.checkResult.getOffset(ctx);
 		Op result = opGen("Load", "DirAddr " + offset, toReg(reg));
 
@@ -341,8 +350,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitNumExpr(NumExprContext ctx) {
-		int reg = nextReg();
-		Op result = opGen("LdConst", ctx.getText(), toReg(reg));
+		int reg = nextReg(ctx);
+		String value = "ImmValue " + ctx.getText();
+		Op result = opGen("Load", value, toReg(reg));
 
         regs.put(ctx, reg);
 		program.addOp(result);
@@ -351,8 +361,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
     @Override
     public Op visitFalseExpr(FalseExprContext ctx) {
-        int reg = nextReg();
-        Op result = opGen("LdConst", Utils.TRUE_VALUE, toReg(reg));
+        int reg = nextReg(ctx);
+		String value = "ImmValue " + Utils.FALSE_VALUE;
+        Op result = opGen("Load", value, toReg(reg));
 
         regs.put(ctx, reg);
         program.addOp(result);
@@ -361,12 +372,35 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
     @Override
     public Op visitTrueExpr(TrueExprContext ctx) {
-        int reg = nextReg();
-        Op result = opGen("LdConst", Utils.TRUE_VALUE, toReg(reg));
+        int reg = nextReg(ctx);
+		String value = "ImmValue " + Utils.TRUE_VALUE;
+        Op result = opGen("Load", value, toReg(reg));
 
         regs.put(ctx, reg);
         program.addOp(result);
         return result;
     }
+
+	/** Records an error at a given parse tree node.
+	 * @param ctx the parse tree node at which the error occurred
+	 * @param message the error message
+	 * @param args arguments for the message, see {@link String#format}
+	 */
+	private void addError(ParserRuleContext ctx, String message, Object... args) {
+		addError(ctx.getStart(), message, args);
+	}
+
+	/** Records an error at a given token.
+	 * @param token the token at which the error occurred
+	 * @param message the error message
+	 * @param args arguments for the message, see {@link String#format}
+	 */
+	private void addError(Token token, String message, Object... args) {
+		int line = token.getLine();
+		int column = token.getCharPositionInLine();
+		message = String.format(message, args);
+		message = String.format("Line %d:%d - %s", line, column, message);
+		this.errors.add(message);
+	}
 
 }
