@@ -6,12 +6,11 @@ import project_9.AtlantisCompiler;
 import project_9.ParseException;
 import project_9.Utils;
 import project_9.checker.CheckResult;
-import project_9.checker.Type;
 
 import java.io.File;
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 /**
  * Author:  Martijn
@@ -22,18 +21,22 @@ public class TypeCheckerTest {
     private final AtlantisCompiler compiler = AtlantisCompiler.instance();
 
     @Test
-    public void test() throws ParseException, IOException {
-        ParseTree tree = parse("basic");
-        CheckResult res = check(tree);
+    public void test() throws IOException {
+        try {
+            check("Basic");
+            // expected behaviour
+        } catch (ParseException e) {
+            fail("Should have succeeded, but didn't.");
+            e.print();
+        }
 
-        assertEquals(Type.INT, res.getType(tree.getChild(3).getChild(1).getChild(1)));
     }
 
     @Test
     public void failTest() throws IOException {
         try {
             check("basicFail");
-            fail("Should not have passed the checker.");
+            fail("Should not have succeeded, but did.");
         } catch (ParseException e) {
             // expected behaviour
             e.print();

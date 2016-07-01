@@ -1,0 +1,13 @@
+program Nesting;
+
+{
+    if true then {
+        integer x = 5;
+        if true then {
+            x = 7;
+        }
+    };
+    if true then {
+        boolean x = false;
+    };
+}

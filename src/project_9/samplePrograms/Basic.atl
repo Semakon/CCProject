@@ -2,9 +2,18 @@ program Basic;
 
 {
     integer x = 1;
-    integer y = 2;
-    integer z = 4;
-    if x == y then {
-        z = x + y;
-    };
+    integer y = (-2);
+    integer z = 3;
+
+    z = y * 3;                      # z = -6 #
+    y = z + x;                      # y = -5 #
+    x = y - z;                      # x = 1 #
+
+    boolean test = false;
+    boolean test2 = false;
+    boolean test3;
+
+    test = (x == 1) || (y == 3);    # test = true #
+    test2 = (z == (y - x));         # test2 = true #
+    test3 = test2 && (not test);    # test3 = false #
 }

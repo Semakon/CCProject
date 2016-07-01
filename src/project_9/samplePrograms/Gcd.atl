@@ -1,4 +1,4 @@
-program gcd;
+program Gcd;
 
 {
     integer x = 14;
@@ -10,5 +10,5 @@ program gcd;
             y = y - x;
         };
     };
-    out("GCD: ", x);
+    # output: x #
 }

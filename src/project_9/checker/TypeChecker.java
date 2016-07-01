@@ -32,7 +32,7 @@ public class TypeChecker extends AtlantisBaseListener {
         this.scope = new Scope();
         new ParseTreeWalker().walk(this, tree);
         if (hasErrors()) {
-            Utils.pr(getErrors());
+            Utils.pr(getErrors()); // shows all errors when Utils.DEBUG is true
             throw new ParseException(getErrors());
         }
         return this.result;
@@ -69,7 +69,11 @@ public class TypeChecker extends AtlantisBaseListener {
 
     @Override
     public void exitDeclStat(DeclStatContext ctx) {
-        checkType(ctx.target(), type(ctx.type()));
+        String id = ctx.target().getText();
+        Type type = this.scope.type(id);
+        if (!type(ctx.type()).sameType(type)) {
+            addError(ctx, "The type of '%s' is already defined as '%s'", id, type);
+        }
         if (ctx.expr() != null) {
             checkType(ctx.expr(), type(ctx.type()));
             setEntry(ctx.target(), ctx.expr());
@@ -86,12 +90,6 @@ public class TypeChecker extends AtlantisBaseListener {
     @Override
     public void exitWhileStat(WhileStatContext ctx) {
         checkType(ctx.expr(), Type.BOOL);
-        setEntry(ctx, entry(ctx.expr()));
-    }
-
-    @Override
-    public void exitForkStat(ForkStatContext ctx) {
-        checkType(ctx.expr(), Type.INT);
         setEntry(ctx, entry(ctx.expr()));
     }
 

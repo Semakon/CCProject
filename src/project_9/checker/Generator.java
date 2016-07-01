@@ -227,9 +227,6 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         // Location of Jump operation
 		int jumpLoc = program.getOperations().size();
 
-		Utils.pr("startWhile:\t" + startWhile, "endWhile:\t" + endWhile, "branchLoc:\t"
-                + branchLoc, "jumpLoc:\t" + jumpLoc);
-
         // branch operation
 		Op branch = opGen("Branch", toReg(reg), "Rel " + endWhile);
 		program.addOpAt(branchLoc, branch);
@@ -367,9 +364,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitParExpr(ParExprContext ctx) {
-        int reg = regs.removeFrom(ctx);
-		regs.put(ctx.expr(), reg); 
-		return visit(ctx.expr());
+        Op result = visit(ctx.expr());
+        int reg = regs.removeFrom(ctx.expr());
+		regs.put(ctx, reg);
+		return result;
 	}
 	
 	@Override

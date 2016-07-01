@@ -3,6 +3,10 @@ program BasicBlocks;
 {
     integer i = 0;
     while 2 > i do {
-        i = i + 1;
+        i = i * 2;
+    };
+
+    if i == 2 then {
+        integer x = i;
     };
 }

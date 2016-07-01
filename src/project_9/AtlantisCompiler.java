@@ -39,6 +39,30 @@ public class AtlantisCompiler {
         return instance;
     }
 
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            System.err.println("Usage: <filename>");
+            return;
+        }
+        try {
+            String filename = args[0];
+            File file = new File(Utils.BASE_DIR + filename + Utils.EXT);
+
+            // Constructs a program with the filename
+            Program prog = instance().compile(file);
+
+            // Prints the constructed program to the console
+            Utils.pr(prog.generateCode(filename));
+
+            // Generates a haskell file using the constructed program
+            Utils.toHaskellFile(prog, filename);
+        } catch (ParseException e) {
+            e.print();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Program compile(File file) throws IOException, ParseException {
         ParseTree tree = parse(file);
         return this.generator.generate(tree, check(tree));
