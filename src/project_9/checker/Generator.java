@@ -160,25 +160,29 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		if (ctx.ELSE() != null) {
 			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
-			visit(ctx.block(1));
+			visit(ctx.block(0));
 
 			int jumploc = program.getOperations().size() + 1;
 			int thencount = this.instrcount + 2;
 			this.instrcount = 0;
-			visit(ctx.block(0));
+			visit(ctx.block(1));
 
 			int elsecount = this.instrcount + 1;
 
+			// emit branch to then/else
 			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(thencount));
 			program.addOpAt(branchloc,  branch);
 
+			// emit jump to end of if-statement
 			Op jump = opGen("Jump", "Rel " + Integer.toString(elsecount));
 			program.addOpAt(jumploc, jump);
 		} else {
 			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
 			visit(ctx.block(0));
-			int count = this.instrcount;
+			int count = this.instrcount + 1;
+
+			// emit jump to end of if-statement
 			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(count));
 			program.addOpAt(branchloc, branch);
 		}

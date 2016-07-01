@@ -15,7 +15,6 @@ stat    : target ASS expr               #assStat
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
         | FORK RPAR expr LPAR block     #forkStat
-        | PRINT expr                    #printStat
         ;
 
 /* Target variable */

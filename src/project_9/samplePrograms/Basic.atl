@@ -3,10 +3,8 @@ program basic;
 {
     integer x = 1;
     integer y = 2;
-    integer z;
+    integer z = 4;
     if x == y then {
         z = x + y;
-    } else {
-        z = x * y;
     };
 }

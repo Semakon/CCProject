@@ -96,11 +96,6 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
-    public void exitPrintStat(PrintStatContext ctx) {
-        setEntry(ctx, ctx.expr());
-    }
-
-    @Override
     public void exitVarTarget(VarTargetContext ctx) {
         String id = ctx.getText();
         Type type = this.scope.type(id);

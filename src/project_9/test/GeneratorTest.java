@@ -21,6 +21,17 @@ public class GeneratorTest {
     @Test
     public void basicTest() throws IOException, ParseException {
         String filename = "Basic";
+        compileTest(filename);
+    }
+
+    @Test
+    public void basicBlocksTest() throws IOException, ParseException {
+        String filename = "BasicBlocks";
+        compileTest(filename);
+
+    }
+
+    private void compileTest(String filename) throws IOException, ParseException {
         Program prog = compile(filename);
         System.out.println(prog.toString());
 
@@ -29,7 +40,7 @@ public class GeneratorTest {
             System.out.println(aCode);
         }
 
-        Utils.toHaskellFile(prog, filename);
+//        Utils.toHaskellFile(prog, filename);
     }
 
     private Program compile(String filename) throws IOException, ParseException {

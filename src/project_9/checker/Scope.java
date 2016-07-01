@@ -8,7 +8,7 @@ public class Scope {
 
     /** Current size of this scope (in bytes).
      * Used to calculate offsets of newly declared variables. */
-    private int size;
+    private int size = 1;
     /** Map from declared variables to their types. */
     private final Map<String, Type> types;
     /** Map from declared variables to their offset within the allocation
