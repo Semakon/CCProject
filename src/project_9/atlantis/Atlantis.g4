@@ -14,6 +14,8 @@ stat    : target ASS expr               #assStat
         | IF expr THEN block
           (ELSE block)?                 #ifStat
         | WHILE expr DO block           #whileStat
+        | FORK block                    #forkStat
+        | JOIN                          #joinStat
         ;
 
 /* Target variable */
@@ -66,7 +68,7 @@ TRUE:       T R U E;
 FALSE:      F A L S E;
 NOT:        N O T;
 FORK:       F O R K;
-PRINT:      P R I N T;
+JOIN:       J O I N;
 
 /* Symbols */
 ASS:        '=';

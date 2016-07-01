@@ -94,6 +94,16 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
+    public void exitForkStat(ForkStatContext ctx) {
+        setEntry(ctx, entry(ctx.block()));
+    }
+
+    @Override
+    public void exitJoinStat(JoinStatContext ctx) {
+        setEntry(ctx, ctx);
+    }
+
+    @Override
     public void exitVarTarget(VarTargetContext ctx) {
         String id = ctx.getText();
         Type type = this.scope.type(id);

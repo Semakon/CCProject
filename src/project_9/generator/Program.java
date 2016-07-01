@@ -1,7 +1,6 @@
-package project_9.checker;
+package project_9.generator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**

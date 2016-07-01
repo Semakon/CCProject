@@ -1,4 +1,4 @@
-package project_9.checker;
+package project_9.generator;
 
 public class Op {
 	

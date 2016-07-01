@@ -8,17 +8,31 @@ public class Scope {
 
     /** Current size of this scope (in bytes).
      * Used to calculate offsets of newly declared variables. */
-    private int size = 1;
+    private int size;
     /** Map from declared variables to their types. */
     private final Map<String, Type> types;
     /** Map from declared variables to their offset within the allocation
      * record of this scope. */
     private final Map<String, Integer> offsets;
 
-    /** Constructs a fresh, initially empty scope. */
+    /** Constructs a fresh, initially empty scope with a size of 1. */
     public Scope() {
+        this(1);
+    }
+
+    /** Constructs a fresh, initially empty scope. */
+    public Scope(int size) {
+        this.size = size;
         this.types = new LinkedHashMap<>();
         this.offsets = new LinkedHashMap<>();
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public Map<String, Type> getTypes() {
+        return types;
     }
 
     /** Tests if a given identifier is declared in this scope. */
@@ -54,4 +68,5 @@ public class Scope {
     public Integer offset(String id) {
         return this.offsets.get(id);
     }
+
 }

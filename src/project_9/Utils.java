@@ -1,6 +1,6 @@
 package project_9;
 
-import project_9.checker.Program;
+import project_9.generator.Program;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -24,7 +24,7 @@ public class Utils {
     public final static String EXT = ".atl";
 
     /** Base directory of generated Haskell programs  */
-    public static final String BASE_HS_DIR = "src/project_9/generatedHaskell/";
+    public static final String BASE_HS_DIR = "src/project_9/haskellPrograms/";
 
     /** Extension of Haskell programs */
     private final static String HS_EXT = ".hs";

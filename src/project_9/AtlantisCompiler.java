@@ -5,8 +5,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import project_9.atlantis.AtlantisLexer;
 import project_9.atlantis.AtlantisParser;
 import project_9.checker.CheckResult;
-import project_9.checker.Generator;
-import project_9.checker.Program;
+import project_9.generator.Generator;
+import project_9.generator.Program;
 import project_9.checker.TypeChecker;
 
 import java.io.File;

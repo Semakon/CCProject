@@ -4,7 +4,7 @@ import org.junit.Test;
 import project_9.AtlantisCompiler;
 import project_9.ParseException;
 import project_9.Utils;
-import project_9.checker.Program;
+import project_9.generator.Program;
 
 import java.io.File;
 import java.io.IOException;
