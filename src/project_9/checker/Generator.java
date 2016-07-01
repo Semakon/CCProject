@@ -201,31 +201,43 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitWhileStat(WhileStatContext ctx) {
-		int jumpLoc = program.getOperations().size();
+        // line number of the first operation of the while loop
+        int startWhile = program.getOperations().size();
+
 		Op result = visit(ctx.expr());
 		int reg = regs.removeFrom(ctx.expr());
 		regs.put(ctx, reg);
 
-		// invert comparison to satisfy branch
+		// invert comparison to satisfy branch computation
 		Op compute = opGen("Compute", "Equal", toReg(reg), "reg0", toReg(reg));
 		program.addOp(compute);
 
-		int jumpTo = program.getOperations().size();
+        // Location of Branch operation
+		int branchLoc = program.getOperations().size();
 
+        // calculate line number at end of while loop
 		this.instrcount = 0;
 		visit(ctx.block());
 		int endWhile = instrcount + 2;
 
+        // nop operation
 		Op nop = opGen("Nop"); //<- Jump to here at end of while loop.
 		program.addOp(nop);
 
-		Utils.pr("Endwhile: " + endWhile, "Jumpto: " + jumpTo, "JumpLoc: " + jumpLoc);
+        // Location of Jump operation
+		int jumpLoc = program.getOperations().size();
 
+		Utils.pr("startWhile:\t" + startWhile, "endWhile:\t" + endWhile, "branchLoc:\t"
+                + branchLoc, "jumpLoc:\t" + jumpLoc);
+
+        // branch operation
 		Op branch = opGen("Branch", toReg(reg), "Rel " + endWhile);
-		program.addOpAt(jumpTo, branch);
+		program.addOpAt(branchLoc, branch);
 
-		Op jump = opGen("Jump", "Abs " + jumpTo);
+        // jump operation
+		Op jump = opGen("Jump", "Abs " + startWhile);
 		program.addOpAt(jumpLoc, jump);
+
 		switchReg(reg);
 		return result;
 	}

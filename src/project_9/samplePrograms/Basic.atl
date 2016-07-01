@@ -1,4 +1,4 @@
-program basic;
+program Basic;
 
 {
     integer x = 1;

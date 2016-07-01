@@ -1,9 +1,8 @@
-program basicBlocks;
+program BasicBlocks;
 
 {
-    integer x = 5;
     integer i = 0;
-    while x >= i do {
+    while 2 > i do {
         i = i + 1;
     };
 }

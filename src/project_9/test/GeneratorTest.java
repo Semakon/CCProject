@@ -8,11 +8,10 @@ import project_9.checker.Program;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 /**
- * Author:  martijn
- * Date:    1-7-16.
+ * Author:  Martijn
+ * Date:    30-6-2016
  */
 public class GeneratorTest {
 
@@ -21,26 +20,25 @@ public class GeneratorTest {
     @Test
     public void basicTest() throws IOException, ParseException {
         String filename = "Basic";
-        compileTest(filename);
+        Program prog = compile(filename);
+
+        System.out.println(prog.toString());
+        for (String line : prog.generateCode(filename)) {
+            System.out.println(line);
+        }
+
+        Utils.toHaskellFile(prog, filename);
     }
 
     @Test
     public void basicBlocksTest() throws IOException, ParseException {
         String filename = "BasicBlocks";
-        compileTest(filename);
-
-    }
-
-    private void compileTest(String filename) throws IOException, ParseException {
         Program prog = compile(filename);
-        System.out.println(prog.toString());
 
-        List<String> code = prog.generateCode(filename);
-        for (String aCode : code) {
-            System.out.println(aCode);
+//        System.out.println(prog.toString());
+        for (String line : prog.generateCode(filename)) {
+            System.out.println(line);
         }
-
-//        Utils.toHaskellFile(prog, filename);
     }
 
     private Program compile(String filename) throws IOException, ParseException {
