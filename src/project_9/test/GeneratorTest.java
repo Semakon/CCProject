@@ -43,6 +43,16 @@ public class GeneratorTest {
     }
 
     @Test
+    public void ifStatmentTest() throws IOException {
+        try {
+            test("IfStatement");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
+    @Test
     public void whileLoopTest() throws IOException {
         try {
             test("WhileLoop");

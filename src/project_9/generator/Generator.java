@@ -155,50 +155,46 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitIfStat(IfStatContext ctx) {
-		Op result = visit(ctx.expr());
-		int reg = regs.removeFrom(ctx.expr());
+        Op result;
+        int reg;
+
+        // compute size of block
+        int startIf = instrcount;
+        visit(ctx.block(0));
+        int size = instrcount - startIf;
+
+        // insert jump operation at beginning of if statement
+        Op jmp = opGen("Jump", "Rel " + (size + 2));
+        program.insertOp(startIf, jmp);
+
+        // determine second jump location
+        int sndJmpLoc = instrcount;
+
+        // compute size of expression
+        size = instrcount;
+        result = visit(ctx.expr());
+        reg = regs.removeFrom(ctx.expr());
         regs.put(ctx, reg);
+        size = instrcount - size;
 
-		// invert comparison to satisfy branch
-		Op compute = opGen("Compute", "Equal", toReg(reg), "reg0", toReg(reg));
-		program.addOp(compute);
-		
-		if (ctx.ELSE() != null) {
-			int branchloc = program.getOperations().size();
-			this.instrcount = 0;
-			visit(ctx.block(0));
+        // add branch operation at the end of expr
+        int brnch = -(instrcount - startIf);
+        Op branch = opGen("Branch", toReg(reg), "Rel (" + brnch + ")");
+        program.addOp(branch);
 
-			int jumploc = program.getOperations().size() + 1;
+        // add size of second block to size (if there is a second block)
+        if (ctx.ELSE() != null) {
+            int startElse = instrcount;
+            visit(ctx.block(1));
+            size += instrcount - startElse;
+        }
 
-			// adjust for two extra instructions
-			int thencount = this.instrcount + 2;
-			this.instrcount = 0;
-			visit(ctx.block(1));
+        // insert jump at the end of the first block
+        Op sndJmp = opGen("Jump", "Rel " + (size + 2));
+        program.insertOp(sndJmpLoc, sndJmp);
 
-			// adjust for extra instruction
-			int elsecount = this.instrcount + 1;
-
-			// emit branch to then/else
-			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(thencount));
-			program.insertOp(branchloc,  branch);
-
-			// emit jump to end of if-statement
-			Op jump = opGen("Jump", "Rel " + Integer.toString(elsecount));
-			program.insertOp(jumploc, jump);
-		} else {
-			int branchloc = program.getOperations().size();
-			this.instrcount = 0;
-			visit(ctx.block(0));
-
-			// adjust for extra instruction
-			int count = this.instrcount + 1;
-
-			// emit jump to end of if-statement
-			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(count));
-			program.insertOp(branchloc, branch);
-		}
-		switchReg(reg);
-		return result;
+        switchReg(reg);
+        return result;
 	}
 	
 	@Override

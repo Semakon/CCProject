@@ -1,0 +1,12 @@
+program IfStatement;
+
+{
+    integer x = 1;
+    integer y = 2;
+    integer z;
+    if x == y then {
+        z = 3;
+    } else {
+        z = 4;
+    };
+}
