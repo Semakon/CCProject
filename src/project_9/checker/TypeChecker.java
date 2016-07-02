@@ -20,7 +20,7 @@ public class TypeChecker extends AtlantisBaseListener {
 
     private CheckResult result;
     private List<String> errors;
-    private Scope scope;
+    private SymbolTable table;
 
     /** Runs this checker on a given parse tree,
      * and returns the checker result.
@@ -29,7 +29,7 @@ public class TypeChecker extends AtlantisBaseListener {
     public CheckResult check(ParseTree tree) throws ParseException {
         this.result = new CheckResult();
         this.errors = new ArrayList<>();
-        this.scope = new Scope();
+        this.table = new SymbolTable();
         new ParseTreeWalker().walk(this, tree);
         if (hasErrors()) {
             Utils.pr(getErrors()); // shows all errors when Utils.DEBUG is true
@@ -70,7 +70,8 @@ public class TypeChecker extends AtlantisBaseListener {
     @Override
     public void exitDeclStat(DeclStatContext ctx) {
         String id = ctx.target().getText();
-        Type type = this.scope.type(id);
+        Type type = this.table.lookupType(id);
+
         if (!type(ctx.type()).sameType(type)) {
             addError(ctx, "The type of '%s' is already defined as '%s'", id, type);
         }
@@ -106,19 +107,19 @@ public class TypeChecker extends AtlantisBaseListener {
     @Override
     public void exitVarTarget(VarTargetContext ctx) {
         String id = ctx.getText();
-        Type type = this.scope.type(id);
+        Type type = this.table.lookupType(id);
 
         if (ctx.getParent() instanceof DeclStatContext) {
             // target is part of a declaration
             type = type(((DeclStatContext)ctx.getParent()).type());
-            this.scope.put(id, type);
+            this.table.insert(id, type);
         }
 
         if (type == null) {
             // type undefined
             addError(ctx, String.format("Type of '%s' is undefined", id));
         } else {
-            setOffset(ctx, this.scope.offset(id));
+            setOffset(ctx, this.table.lookupOffset(id));
             setType(ctx, type);
             setEntry(ctx, ctx);
         }
@@ -178,9 +179,15 @@ public class TypeChecker extends AtlantisBaseListener {
     @Override
     public void exitVarExpr(VarExprContext ctx) {
         String id = ctx.VAR().getText();
-        setOffset(ctx, this.scope.offset(id));
-        setType(ctx, this.scope.type(id));
-        setEntry(ctx, ctx);
+        Type type = this.table.lookupType(id);
+
+        if (type == null) {
+            addError(ctx, String.format("Variable '%s' not in scope.", id));
+        } else {
+            setOffset(ctx, this.table.lookupOffset(id));
+            setType(ctx, type);
+            setEntry(ctx, ctx);
+        }
     }
 
     @Override
