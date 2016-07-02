@@ -19,8 +19,10 @@ import static org.junit.Assert.fail;
  */
 public class GeneratorTest {
 
+    /** Instance of AtlantisCompiler */
     private final AtlantisCompiler compiler = AtlantisCompiler.instance();
 
+    /** Tests compiling of Basic.atl */
     @Test
     public void basicTest() throws IOException, ParseException {
         try {
@@ -31,6 +33,7 @@ public class GeneratorTest {
         }
     }
 
+    /** Tests compiling of Blocks.atl */
     @Test
     public void blocksTest() throws IOException, ParseException {
         try {
@@ -41,6 +44,7 @@ public class GeneratorTest {
         }
     }
 
+    /** Tests compiling of IfStatment.atl */
     @Test
     public void ifStatmentTest() throws IOException {
         try {
@@ -51,6 +55,18 @@ public class GeneratorTest {
         }
     }
 
+    /** Tests compiling of Scopes.atl */
+    @Test
+    public void scopesTest() throws IOException {
+        try {
+            test("Scopes");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
+    /** Tests compiling of WhileLoop.atl */
     @Test
     public void whileLoopTest() throws IOException {
         try {
@@ -61,6 +77,7 @@ public class GeneratorTest {
         }
     }
 
+    /** Tests compiling of Gcd.atl */
     @Test
     public void gcdTest() throws IOException {
         try {
