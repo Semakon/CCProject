@@ -1,5 +1,6 @@
 package project_9.test;
 
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import org.junit.Test;
 import project_9.AtlantisCompiler;
 import project_9.ParseException;
@@ -26,18 +27,38 @@ public class GeneratorTest {
         try {
             test("Basic");
         } catch (ParseException e) {
-            fail("Program should've compiled, but didn't.");
             e.print();
+            fail("Program should've compiled, but didn't.");
         }
     }
 
     @Test
-    public void basicBlocksTest() throws IOException, ParseException {
+    public void blocksTest() throws IOException, ParseException {
         try {
-            test("BasicBlocks");
+            test("Blocks");
         } catch (ParseException e) {
-            fail("Program should've compiled, but didn't.");
             e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
+    @Test
+    public void whileLoopTest() throws IOException {
+        try {
+            test("WhileLoop");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
+    @Test
+    public void gcdTest() throws IOException {
+        try {
+            test("Gcd");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
         }
     }
 

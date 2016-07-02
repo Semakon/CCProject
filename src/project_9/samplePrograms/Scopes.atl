@@ -1,0 +1,20 @@
+program Scopes;
+
+{
+    integer a = 0;
+    integer b = 1;
+    if a == 0 then {
+        boolean c = false;
+
+        if c then {
+            integer d = 3;
+        };
+
+        if b == 1 then {
+            boolean d = false;
+            c = true;
+        } else {
+            integer d = 4;
+        };
+    };
+}

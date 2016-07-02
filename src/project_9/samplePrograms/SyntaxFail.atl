@@ -1,0 +1,8 @@
+program SyntaxFail;
+
+{
+    interger x = 3;
+    iff x == 3 then {
+        boolian stop = flase;
+    }
+}

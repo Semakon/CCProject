@@ -1,8 +1,8 @@
 program Gcd;
 
 {
-    integer x = 14;
-    integer y = 56;
+    integer x = 10;
+    integer y = 5;
     while x <> y do {
         If x > y then {
             x = x - y;

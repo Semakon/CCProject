@@ -1,0 +1,9 @@
+program WhileLoop;
+
+{
+    integer i = 0;
+    integer x = 5;
+    while x > i do {
+        i = i + 1;
+    };
+}

@@ -20,6 +20,7 @@ import java.util.List;
  */
 public class Generator extends AtlantisBaseVisitor<Op> {
 
+    /** The program that is generated */
 	private Program program;
 	/** The outcome of the checker phase. */
 	private CheckResult checkResult;
@@ -31,7 +32,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	private boolean[] regsInUse;
 	/** Integer to keep track of the amount of instructions*/
 	private int instrcount;
-
+	/** List of errors that occurred */
 	private List<String> errors;
 	
 	
@@ -179,11 +180,11 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
 			// emit branch to then/else
 			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(thencount));
-			program.addOpAt(branchloc,  branch);
+			program.insertOp(branchloc,  branch);
 
 			// emit jump to end of if-statement
 			Op jump = opGen("Jump", "Rel " + Integer.toString(elsecount));
-			program.addOpAt(jumploc, jump);
+			program.insertOp(jumploc, jump);
 		} else {
 			int branchloc = program.getOperations().size();
 			this.instrcount = 0;
@@ -194,7 +195,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
 			// emit jump to end of if-statement
 			Op branch = opGen("Branch", toReg(reg), "Rel " + Integer.toString(count));
-			program.addOpAt(branchloc, branch);
+			program.insertOp(branchloc, branch);
 		}
 		switchReg(reg);
 		return result;
@@ -202,42 +203,27 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	
 	@Override
 	public Op visitWhileStat(WhileStatContext ctx) {
-        // line number of the first operation of the while loop
-        int startWhile = program.getOperations().size();
+        // compute size of block
+        int startWhile = instrcount;
+        Op result = visit(ctx.block());
+        int blckSize = instrcount - startWhile;
 
-		Op result = visit(ctx.expr());
-		int reg = regs.removeFrom(ctx.expr());
-		regs.put(ctx, reg);
+        // insert jump operation at beginning while loop
+        Op jmp = opGen("Jump", "Rel " + (blckSize + 1));
+        program.insertOp(startWhile, jmp);
 
-		// invert comparison to satisfy branch computation
-		Op compute = opGen("Compute", "Equal", toReg(reg), "reg0", toReg(reg));
-		program.addOp(compute);
+        // visit expression
+        visit(ctx.expr());
+        int reg = regs.removeFrom(ctx.expr());
+        regs.put(ctx, reg);
 
-        // Location of Branch operation
-		int branchLoc = program.getOperations().size();
+        // add branch operation at the end of while loop
+        int brnch = -(instrcount - startWhile) + 1;
+        Op branch = opGen("Branch", toReg(reg), "Rel (" + brnch + ")");
+        program.addOp(branch);
 
-        // calculate line number at end of while loop
-		this.instrcount = 0;
-		visit(ctx.block());
-		int endWhile = instrcount + 2;
-
-        // nop operation
-		Op nop = opGen("Nop"); //<- Jump to here at end of while loop.
-		program.addOp(nop);
-
-        // Location of Jump operation
-		int jumpLoc = program.getOperations().size();
-
-        // branch operation
-		Op branch = opGen("Branch", toReg(reg), "Rel " + endWhile);
-		program.addOpAt(branchLoc, branch);
-
-        // jump operation
-		Op jump = opGen("Jump", "Abs " + startWhile);
-		program.addOpAt(jumpLoc, jump);
-
-		switchReg(reg);
-		return result;
+        switchReg(reg);
+        return result;
 	}
 
     @Override

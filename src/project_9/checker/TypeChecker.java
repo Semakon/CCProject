@@ -18,8 +18,11 @@ import java.util.List;
  */
 public class TypeChecker extends AtlantisBaseListener {
 
+    /** CheckResult that stores all the data collected by the checker */
     private CheckResult result;
+    /** List of errors that occurred */
     private List<String> errors;
+    /** SymbolTable that keeps track of the scopes */
     private SymbolTable table;
 
     /** Runs this checker on a given parse tree,
@@ -35,10 +38,7 @@ public class TypeChecker extends AtlantisBaseListener {
             Utils.pr(getErrors()); // shows all errors when Utils.DEBUG is true
             throw new ParseException(getErrors());
         }
-        return this.result;
-    }
-
-    public CheckResult getResult() {
+        Utils.pr(table.toString());
         return this.result;
     }
 
@@ -51,12 +51,22 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
-    public void enterProgram(ProgramContext ctx) {
+    public void exitProgram(ProgramContext ctx) {
         setEntry(ctx, entry(ctx.block()));
     }
 
     @Override
+    public void enterBlock(BlockContext ctx) {
+        if (!(ctx.getParent() instanceof ProgramContext)) {
+            table.openScope();
+        }
+    }
+
+    @Override
     public void exitBlock(BlockContext ctx) {
+        if (!(ctx.getParent() instanceof ProgramContext)) {
+            table.closeScope();
+        }
         setEntry(ctx, entry(ctx.stat(0)));
     }
 
@@ -68,16 +78,25 @@ public class TypeChecker extends AtlantisBaseListener {
     }
 
     @Override
+    public void enterDeclStat(DeclStatContext ctx) {
+        String id = ctx.target().getText();
+        if (this.table.lookupType(id) != null) {
+            addError(ctx, "The type of '%s' is already defined", id);
+        }
+    }
+
+    @Override
     public void exitDeclStat(DeclStatContext ctx) {
         String id = ctx.target().getText();
         Type type = this.table.lookupType(id);
 
         if (!type(ctx.type()).sameType(type)) {
             addError(ctx, "The type of '%s' is already defined as '%s'", id, type);
-        }
-        if (ctx.expr() != null) {
-            checkType(ctx.expr(), type(ctx.type()));
-            setEntry(ctx.target(), ctx.expr());
+        } else {
+            if (ctx.expr() != null) {
+                checkType(ctx.expr(), type(ctx.type()));
+                setEntry(ctx.target(), ctx.expr());
+            }
         }
         setEntry(ctx, ctx.target());
     }

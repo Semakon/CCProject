@@ -21,28 +21,28 @@ public class Utils {
     public static final String BASE_DIR = "src/project_9/samplePrograms/";
 
     /** Extension of Atlantis programs */
-    public final static String EXT = ".atl";
+    public static final String EXT = ".atl";
 
     /** Base directory of generated Haskell programs  */
     public static final String BASE_HS_DIR = "src/project_9/haskellPrograms/";
 
     /** Extension of Haskell programs */
-    private final static String HS_EXT = ".hs";
+    private static final String HS_EXT = ".hs";
 
-    /** String representation of the true value in Sprockell */
-    public final static String TRUE_VALUE = "1";
+    /** String representation of the true value in SprIl */
+    public static final String TRUE_VALUE = "1";
 
-    /** STring representation of the false value in Sprockell */
-    public final static String FALSE_VALUE = "0";
+    /** STring representation of the false value in SprIl */
+    public static final String FALSE_VALUE = "0";
 
     /** Size of a integer type in bytes. */
-    public final static int INT_SIZE = 1;
+    public static final int INT_SIZE = 1;
 
     /** Size of a boolean type in bytes. */
-    public final static int BOOL_SIZE = 1;
+    public static final int BOOL_SIZE = 1;
 
     /** Static boolean that determines debugging */
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /**
      * Prints text to console if debugging is on.

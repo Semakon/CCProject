@@ -20,7 +20,7 @@ import java.io.IOException;
 public class AtlantisCompiler {
 
     /** The singleton instance of this class. */
-    private final static AtlantisCompiler instance = new AtlantisCompiler();
+    private static final AtlantisCompiler instance = new AtlantisCompiler();
 
     /** The fixed TypeChecker of this compiler. */
     private final TypeChecker checker;
@@ -51,7 +51,7 @@ public class AtlantisCompiler {
             // Constructs a program with the filename
             Program prog = instance().compile(file);
 
-            // Prints the constructed program to the console
+            // Prints the constructed program to the console (if debugging is one)
             Utils.pr(prog.generateCode(filename));
 
             // Generates a haskell file using the constructed program
@@ -68,11 +68,6 @@ public class AtlantisCompiler {
         return this.generator.generate(tree, check(tree));
     }
 
-    /** Type checks a given Atlantis string. */
-    public CheckResult check(String text) throws ParseException {
-        return check(parse(text));
-    }
-
     /** Type checks a given Atlantis file. */
     public CheckResult check(File file) throws ParseException, IOException {
         return check(parse(file));
@@ -81,11 +76,6 @@ public class AtlantisCompiler {
     /** Type checks a given Atlantis parse tree. */
     public CheckResult check(ParseTree tree) throws ParseException {
         return this.checker.check(tree);
-    }
-
-    /** Compiles a given Atlantis String into a parse tree. */
-    public ParseTree parse(String text) throws ParseException {
-        return parse(new ANTLRInputStream(text));
     }
 
     /** Compiles a given Atlantis file into a parse tree. */
