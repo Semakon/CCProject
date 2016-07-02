@@ -1,0 +1,12 @@
+program BlocksFail;
+
+{
+    integer i = 2;
+    while 3 + 4 do {
+        boolean stop = true;
+    };
+
+    if i * 2 then {
+        i = 5;
+    };
+}

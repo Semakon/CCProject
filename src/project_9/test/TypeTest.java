@@ -102,9 +102,9 @@ public class TypeTest {
 
     /** Tests types of BlocksFail.atl */
     @Test
-    public void testBlockFail() throws IOException {
+    public void testBlocksFail() throws IOException {
         try {
-            check("BlockFail");
+            check("BlocksFail");
             fail("Should not have succeeded, but did.");
         } catch (ParseException e) {
             // this is the expected behaviour.
