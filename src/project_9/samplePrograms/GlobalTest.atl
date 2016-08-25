@@ -1,0 +1,12 @@
+program GlobalTest;
+
+{
+    global integer x = 5;
+    integer y = 7;
+    if true then {
+        y = 8;
+        x = 3;
+        global boolean z = true;
+    };
+    integer z = 2;
+}

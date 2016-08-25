@@ -115,6 +115,7 @@ public class TypeChecker extends AtlantisBaseListener {
 
     @Override
     public void exitForkStat(ForkStatContext ctx) {
+        result.incThreadCount();
         setEntry(ctx, entry(ctx.block()));
     }
 

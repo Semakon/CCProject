@@ -24,8 +24,6 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
     /** The program that is generated. */
 	private Program program;
-	/** Highest number of threads active at any time (not including the main thread). */
-	private int maxThreads = 0;
 	/** Counts the current number of threads active (not including the main thread). */
     private int threadCount = 0;
     /** Current generated thread */
@@ -66,7 +64,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		if (hasErrors()) {
 			throw new ParseException(getErrors());
 		}
-        program.setMaxThreads(maxThreads);
+        program.setMaxThreads(checkResult.getThreadCount());
 		return program;
 	}
 
@@ -152,17 +150,16 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		int reg = regs.get(currentThread).get(ctx.expr());
 
 		String target = "DirAddr ";
-        String opCode = null;
+        String opCode = "Store";
 
         if (checkResult.getGlobalOffset(ctx) != null) {
             target += globalOffset(ctx.target());
             opCode = "WriteInstr";
         } else if (checkResult.getOffset(ctx) != null) {
             target += offset(ctx.target());
-            opCode = "Store";
-        } else {
+        }/* else {
             addError(ctx, "The variable '%s' is undefined", ctx.target().getText());
-        }
+        }*/
 
 		Op store = opGen(opCode, toReg(reg), target);
 
@@ -268,9 +265,6 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
     @Override
     public Op visitForkStat(ForkStatContext ctx) {
-        threadCount++;
-
-		int startFork = instrcount; // index of branch
         Op branch = opGen("Branch", "regSprID", "Rel " + 4);
         program.addOp(branch);
 
@@ -308,8 +302,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         Op load = opGen("Load", "ImmValue " + loadIndex, toReg(nextReg(ctx)));
         program.insertOp(loadPos, load);
 
-        visit(ctx.block()); // block in the fork (sprockell 1)
+        // start fork's block
+        currentThread = ++threadCount;
+        visit(ctx.block());
 
+        // Set this thread's regSprID to 0 (signal done)
+        program.addOp(opGen("WriteInstr", "reg0", "IndAddr regSprID")); //TODO: change regSprID
         // EndProg at the end of sprockell 1 fork
         program.addOp(opGen("EndProg"));
 
@@ -318,6 +316,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         Op jump = opGen("Jump", "Abs " + jumpIndex);
         program.insertOp(jumpPos, jump);
 
+        currentThread = 0;
         return branch;
     }
 
@@ -333,13 +332,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
             result = joinLoop(reg, unjoinedForks.get(0));
         }
 
-        for (int i = 1; i < threadCount; i++) {
+        for (int i = 1; i < unjoinedForks.size(); i++) {
             joinLoop(reg, unjoinedForks.get(i));
-        }
-
-        if (threadCount > maxThreads) {
-            maxThreads = threadCount;
-            threadCount = 0;
         }
 
         return result;

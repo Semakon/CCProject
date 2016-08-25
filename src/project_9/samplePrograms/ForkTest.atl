@@ -1,0 +1,10 @@
+program ForkTest;
+
+{
+    global integer x = 5;
+    fork {
+        x = x + 4;
+    };
+    x = x - 3;
+    join;
+}

@@ -17,7 +17,7 @@ prog = [
         , Load (DirAddr 1) regA
         , Load (DirAddr 2) regB
         , Compute Sub regA regB regA
-        , Store regA (DirAddr 1)
+        , Store regA (DirAddr )
         , Jump (Rel 9)
         , Load (DirAddr 1) regA
         , Load (DirAddr 2) regB
@@ -26,10 +26,12 @@ prog = [
         , Load (DirAddr 2) regB
         , Load (DirAddr 1) regC
         , Compute Sub regB regC regB
-        , Store regB (DirAddr 2)
+        , Store regB (DirAddr )
         , Load (DirAddr 1) regA
         , Load (DirAddr 2) regB
         , Compute NEq regA regB regA
         , Branch regA (Rel (-17))
         , EndProg
        ]
+
+demoTest = sysTest [prog]

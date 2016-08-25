@@ -19,6 +19,8 @@ public class CheckResult {
     private ParseTreeProperty<ParserRuleContext> entries;
     /** Parse Tree mapping of global */
     private ParseTreeProperty<Integer> globalOffsets;
+    /** Threadcount excluding main */
+    private int threadCount;
 
     /** Initializes the Parse Tree mappings. */
     public CheckResult() {
@@ -26,6 +28,7 @@ public class CheckResult {
         offsets = new ParseTreeProperty<>();
         entries = new ParseTreeProperty<>();
         globalOffsets = new ParseTreeProperty<>();
+        threadCount = 0;
     }
 
     /** Adds a type to the Parse Tree mapping of types. */
@@ -67,4 +70,15 @@ public class CheckResult {
     public Integer getGlobalOffset(ParseTree ctx) {
         return globalOffsets.get(ctx);
     }
+
+    /** Increments the threadCount */
+    public void incThreadCount() {
+        this.threadCount++;
+    }
+
+    /** Returns the threadCount */
+    public int getThreadCount() {
+        return threadCount;
+    }
+
 }
