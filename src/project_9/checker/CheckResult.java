@@ -17,42 +17,54 @@ public class CheckResult {
     private ParseTreeProperty<Integer> offsets;
     /** Parse Tree mapping of entries */
     private ParseTreeProperty<ParserRuleContext> entries;
+    /** Parse Tree mapping of global */
+    private ParseTreeProperty<Integer> globalOffsets;
 
     /** Initializes the Parse Tree mappings. */
     public CheckResult() {
         types = new ParseTreeProperty<>();
         offsets = new ParseTreeProperty<>();
         entries = new ParseTreeProperty<>();
+        globalOffsets = new ParseTreeProperty<>();
     }
 
-    /** Adds a type to the Parse Tree mapping of types */
+    /** Adds a type to the Parse Tree mapping of types. */
     public void setType(ParseTree ctx, Type type) {
         types.put(ctx, type);
     }
 
-    /** Returns a type of the Parse Tree mapping of types */
+    /** Returns a type of the Parse Tree mapping of types. */
     public Type getType(ParseTree ctx) {
         return types.get(ctx);
     }
 
-    /** Adds an offset to the Parse Tree mapping of offsets */
+    /** Adds an offset to the Parse Tree mapping of offsets. */
     public void setOffset(ParseTree ctx, int offset) {
         offsets.put(ctx, offset);
     }
 
-    /** Returns an offset of the Parse Tree mapping of offsets */
-    public int getOffset(ParseTree ctx) {
+    /** Returns an offset of the Parse Tree mapping of offsets. */
+    public Integer getOffset(ParseTree ctx) {
         return offsets.get(ctx);
     }
 
-    /** Adds an entry to the Parse Tree mapping of entries */
+    /** Adds an entry to the Parse Tree mapping of entries. */
     public void setEntry(ParseTree ctx, ParserRuleContext entry) {
         entries.put(ctx, entry);
     }
 
-    /** Returns an entry of the Parse Tree mapping of entries */
+    /** Returns an entry of the Parse Tree mapping of entries. */
     public ParserRuleContext getEntry(ParseTree ctx) {
         return entries.get(ctx);
     }
 
+    /** Adds a global offset to the Parse Tree mapping of global offsets. */
+    public void setGlobalOffset(ParseTree ctx, int global) {
+        globalOffsets.put(ctx, global);
+    }
+
+    /** Returns a global offset of the Parse Tree mapping of global offsets. */
+    public Integer getGlobalOffset(ParseTree ctx) {
+        return globalOffsets.get(ctx);
+    }
 }

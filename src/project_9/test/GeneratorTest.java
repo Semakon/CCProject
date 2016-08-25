@@ -88,6 +88,17 @@ public class GeneratorTest {
         }
     }
 
+    /** Tests compiling of ForkTest.atl */
+    @Test
+    public void forkTest() throws IOException, ParseException {
+        try {
+            test("ForkTest");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
     /**
      * Prints a file with name <code>filename</code> and writes it to a haskell file.
      * @param filename The name of the file.

@@ -36,7 +36,8 @@ public class SymbolTable {
     public void openScope() {
         int level = pointer.getLevel() + 1;
         int levelId = nextLevelId(level);
-        Scope newScope = new Scope(pointer.getCurrentOffset(), level, levelId, pointer);
+        Scope newScope = new Scope(pointer.getCurrentOffset(),
+                pointer.getCurrentGlobalOffset(), level, levelId, pointer);
 
         scopes.add(newScope);
         pointer = newScope;
@@ -58,7 +59,10 @@ public class SymbolTable {
      * @return <code>true</code> if the identifier was added,
      * <code>false</code> if it was already declared in this scope.
      */
-    public boolean insert(String id, Type type) {
+    public boolean insert(String id, Type type, boolean global) {
+        if (global) {
+            return !contains(id) && pointer.globalPut(id, type);
+        }
         return !contains(id) && pointer.put(id, type);
     }
 
@@ -72,7 +76,7 @@ public class SymbolTable {
         Scope tempPointer = pointer;
         while (true) {
             if (tempPointer == null) return null;
-            if (tempPointer.contains(id)) {
+            if (tempPointer.contains(id) || tempPointer.containsGlobal(id)) {
                 return tempPointer.type(id);
             } else {
                 tempPointer = tempPointer.getParent();
@@ -99,6 +103,24 @@ public class SymbolTable {
     }
 
     /**
+     * Looks up the global offset of a variable in the enclosing scope.
+     * @param id the ID of the variable.
+     * @return the variable's global offset if the variable is in the enclosing scope,
+     *          otherwise <code>null</code>.
+     */
+    public Integer lookupGlobalOffset(String id) {
+        Scope tempPointer = pointer;
+        while (true) {
+            if (tempPointer == null) return null;
+            if (tempPointer.containsGlobal(id)) {
+                return tempPointer.globalOffset(id);
+            } else {
+                tempPointer = tempPointer.getParent();
+            }
+        }
+    }
+
+    /**
      * Tests if a given identifier is in the scope of any declaration.
      * @return <code>true</code> if there is any enclosing scope in which
      * the identifier is declared; <code>false</code> otherwise.
@@ -108,7 +130,7 @@ public class SymbolTable {
         Scope tempPointer = pointer;
         while (true) {
             if (tempPointer == null) return false;
-            if (tempPointer.contains(id)) {
+            if (tempPointer.contains(id) || tempPointer.containsGlobal(id)) {
                 return true;
             } else {
                 tempPointer = tempPointer.getParent();

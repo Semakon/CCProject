@@ -127,18 +127,29 @@ public class TypeChecker extends AtlantisBaseListener {
     public void exitVarTarget(VarTargetContext ctx) {
         String id = ctx.getText();
         Type type = this.table.lookupType(id);
+        ParseTree parent = ctx.getParent();
 
-        if (ctx.getParent() instanceof DeclStatContext) {
+        if (parent instanceof DeclStatContext && !this.table.contains(id)) {
             // target is part of a declaration
-            type = type(((DeclStatContext)ctx.getParent()).type());
-            this.table.insert(id, type);
+            type = type(((DeclStatContext) parent).type());
+
+            if (((DeclStatContext) parent).GLOBAL() != null) {
+                this.table.insert(id, type, true);
+                if (type != null) {
+                    setGlobalOffset(ctx, this.table.lookupGlobalOffset(id));
+                }
+            } else {
+                this.table.insert(id, type, false);
+                if (type != null) {
+                    setOffset(ctx, this.table.lookupOffset(id));
+                }
+            }
         }
 
         if (type == null) {
             // type undefined
             addError(ctx, String.format("Type of '%s' is undefined", id));
         } else {
-            setOffset(ctx, this.table.lookupOffset(id));
             setType(ctx, type);
             setEntry(ctx, ctx);
         }
@@ -203,7 +214,14 @@ public class TypeChecker extends AtlantisBaseListener {
         if (type == null) {
             addError(ctx, String.format("Variable '%s' not in scope.", id));
         } else {
-            setOffset(ctx, this.table.lookupOffset(id));
+            // distinction between offset and global offset
+            Integer globalOffset = this.table.lookupGlobalOffset(id);
+            if (globalOffset != null) {
+                setGlobalOffset(ctx, globalOffset);
+            } else {
+                setOffset(ctx, this.table.lookupOffset(id));
+            }
+
             setType(ctx, type);
             setEntry(ctx, ctx);
         }
@@ -260,6 +278,11 @@ public class TypeChecker extends AtlantisBaseListener {
     /** Returns the given parse tree's type. */
     public Type type(ParseTree ctx) {
         return result.getType(ctx);
+    }
+
+    /** Sets the given parse tree's global boolean. */
+    private void setGlobalOffset(ParseTree ctx, int global) {
+        result.setGlobalOffset(ctx, global);
     }
 
     /** Returns true if the given parse tree has the same type as the given type. */

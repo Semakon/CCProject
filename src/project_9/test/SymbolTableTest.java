@@ -14,15 +14,15 @@ public class SymbolTableTest {
     @Test
     public void test() {
         SymbolTable st = new SymbolTable();
-        st.insert("a", Type.INT);
-        st.insert("b", Type.INT);
+        st.insert("a", Type.INT, false);
+        st.insert("b", Type.INT, false);
 
         st.openScope();
-        st.insert("c", Type.INT);
+        st.insert("c", Type.INT, false);
 
         st.openScope();
-        st.insert("d", Type.INT);
-        st.insert("e", Type.BOOL);
+        st.insert("d", Type.INT, false);
+        st.insert("e", Type.BOOL, false);
         st.closeScope();
 
         Assert.assertEquals(true, st.contains("c"));
@@ -30,15 +30,15 @@ public class SymbolTableTest {
         Assert.assertEquals(false, st.contains("f"));
 
         st.openScope();
-        st.insert("f", Type.BOOL);
+        st.insert("f", Type.BOOL, false);
         st.closeScope();
         st.closeScope();
 
         st.openScope();
-        st.insert("g", Type.INT);
+        st.insert("g", Type.INT, false);
 
         st.openScope();
-        st.insert("h", Type.BOOL);
+        st.insert("h", Type.BOOL, false);
         st.closeScope();
         st.closeScope();
 
@@ -56,24 +56,24 @@ public class SymbolTableTest {
 
         Assert.assertEquals(1, st.getPointer().getCurrentOffset());
 
-        st.insert("a", Type.INT);
-        st.insert("b", Type.INT);
+        st.insert("a", Type.INT, false);
+        st.insert("b", Type.INT, false);
         st.openScope();             // open level 1-1
 
         Assert.assertEquals(3, st.getPointer().getCurrentOffset());
-        Assert.assertEquals(false, st.insert("a", Type.BOOL));
+        Assert.assertEquals(false, st.insert("a", Type.BOOL, false));
 
-        st.insert("c", Type.INT);
+        st.insert("c", Type.INT, false);
         st.openScope();             // open level 2-1
-        st.insert("d", Type.INT);
-        st.insert("e", Type.BOOL);
+        st.insert("d", Type.INT, false);
+        st.insert("e", Type.BOOL, false);
 
         Assert.assertEquals(6, st.getPointer().getCurrentOffset());
         Assert.assertEquals(Type.INT, st.lookupType("d"));
 
         st.closeScope();
         st.openScope();             // open level 2-2
-        st.insert("d", Type.BOOL);
+        st.insert("d", Type.BOOL, false);
 
         Assert.assertEquals(5, st.getPointer().getCurrentOffset());
         Assert.assertEquals(Type.INT, st.lookupType("a"));
@@ -82,9 +82,9 @@ public class SymbolTableTest {
         st.closeScope();
         st.closeScope();
         st.openScope();             // open level 1-2
-        st.insert("f", Type.INT);
+        st.insert("f", Type.INT, false);
         st.openScope();             // open level 2-3
-        st.insert("g", Type.BOOL);
+        st.insert("g", Type.BOOL, false);
         st.closeScope();
         st.closeScope();
 

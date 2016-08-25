@@ -11,7 +11,9 @@ import project_9.atlantis.AtlantisParser.*;
 import project_9.checker.CheckResult;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -20,19 +22,27 @@ import java.util.List;
  */
 public class Generator extends AtlantisBaseVisitor<Op> {
 
-    /** The program that is generated */
+    /** The program that is generated. */
 	private Program program;
+	/** Highest number of threads active at any time (not including the main thread). */
+	private int maxThreads = 0;
+	/** Counts the current number of threads active (not including the main thread). */
+    private int threadCount = 0;
+    /** Current generated thread */
+    private int currentThread = 0;
 	/** The outcome of the checker phase. */
 	private CheckResult checkResult;
 	/** Register count, used to generate fresh registers. */
 	private int regCount;
-	/** ParseTreeProperty to keep track of which expression belongs to which register. */
-	private ParseTreeProperty<Integer> regs;
-	/** Array to indicate which registers are in use (True = in use, False = not in use). */
-	private boolean[] regsInUse;
-	/** Integer to keep track of the amount of instructions*/
+	/** Map of thread-to-ParseTreeProperty to keep track of which expression belongs to which register. */
+	private Map<Integer, ParseTreeProperty<Integer>> regs;
+	/** Map of thread-to-Array to indicate which registers are in use (True = in use, False = not in use). */
+	private Map<Integer, boolean[]> regsInUse;
+	/** Integer to keep track of the amount of instructions. */
 	private int instrcount;
-	/** List of errors that occurred */
+    /** List of all memory locations of forks that have not been joined yet. */
+    private List<Integer> unjoinedForks;
+	/** List of errors that occurred. */
 	private List<String> errors;
 	
 	
@@ -40,16 +50,23 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Program generate(ParseTree tree, CheckResult checkResult) throws ParseException {
 		this.program = new Program();
 		this.checkResult = checkResult;
-		this.regs = new ParseTreeProperty<>();
+        this.regCount = 5;
+
+		this.regs = new HashMap<>();
+        this.regs.put(currentThread, new ParseTreeProperty<Integer>());
+        this.regsInUse = new HashMap<>();
+        this.regsInUse.put(currentThread, new boolean[regCount]);
+
 		this.errors = new ArrayList<>();
-		this.regCount = 5;
 		this.instrcount = 0;
-		this.regsInUse = new boolean[regCount];
+        this.unjoinedForks = new ArrayList<>();
+
 		tree.accept(this);
 		program.addOp(opGen("EndProg"));
 		if (hasErrors()) {
 			throw new ParseException(getErrors());
 		}
+        program.setMaxThreads(maxThreads);
 		return program;
 	}
 
@@ -65,7 +82,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	 * Switches the state of a register
 	 */
 	private void switchReg(int n) {
-		regsInUse[n] = !regsInUse[n];
+        regsInUse.get(currentThread)[n] = !regsInUse.get(currentThread)[n];
 	}
 	
 	/**
@@ -82,7 +99,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	 */
 	private int nextReg(ParserRuleContext ctx) {
 		for (int i = 0; i < regCount; i++) {
-			if (!regsInUse[i]) {
+			if (!regsInUse.get(currentThread)[i]) {
 				switchReg(i);
 				return i;
 			}
@@ -102,10 +119,15 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		return result;
 	}
 	
-	/** Retrieves the offset of a variable node from the checker*/
+	/** Retrieves the offset of a variable node from the checker. */
 	private int offset(ParseTree node) {
 		return this.checkResult.getOffset(node);
 	}
+
+    /** Retrieves the global offset of a variable node from the checker. */
+    private int globalOffset(ParseTree node) {
+        return this.checkResult.getGlobalOffset(node);
+    }
 	
 	@Override
 	public Op visitProgram(ProgramContext ctx) {
@@ -127,9 +149,22 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitAssStat(AssStatContext ctx) {
 		Op result = visit(ctx.expr());
 
-		int reg = regs.get(ctx.expr());
-		String target = "DirAddr " + offset(ctx.target());
-		Op store = opGen("Store", toReg(reg), target);
+		int reg = regs.get(currentThread).get(ctx.expr());
+
+		String target = "DirAddr ";
+        String opCode = null;
+
+        if (checkResult.getGlobalOffset(ctx) != null) {
+            target += globalOffset(ctx.target());
+            opCode = "WriteInstr";
+        } else if (checkResult.getOffset(ctx) != null) {
+            target += offset(ctx.target());
+            opCode = "Store";
+        } else {
+            addError(ctx, "The variable '%s' is undefined", ctx.target().getText());
+        }
+
+		Op store = opGen(opCode, toReg(reg), target);
 
 		program.addOp(store);
 		switchReg(reg);
@@ -142,11 +177,20 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         if (ctx.expr() != null) {
             // only used when declaration is also an assignment
             result = visit(ctx.expr());
+            Integer reg = regs.get(currentThread).get(ctx.expr());
 
-            Integer reg = regs.get(ctx.expr());
-            String target = "DirAddr " + offset(ctx.target());
+            String target = "DirAddr ";
+            String opCode;
 
-            Op store = opGen("Store", toReg(reg), target);
+            if (ctx.GLOBAL() != null) {
+                target += globalOffset(ctx.target());
+                opCode = "WriteInstr";
+            } else {
+                target += offset(ctx.target());
+                opCode = "Store";
+            }
+
+            Op store = opGen(opCode, toReg(reg), target);
             program.addOp(store);
             switchReg(reg);
         }
@@ -173,8 +217,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         // compute size of expression
         size = instrcount;
         result = visit(ctx.expr());
-        reg = regs.removeFrom(ctx.expr());
-        regs.put(ctx, reg);
+        reg = regs.get(currentThread).removeFrom(ctx.expr());
+        regs.get(currentThread).put(ctx, reg);
         size = instrcount - size;
 
         // add branch operation at the end of expr
@@ -210,8 +254,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
         // visit expression
         visit(ctx.expr());
-        int reg = regs.removeFrom(ctx.expr());
-        regs.put(ctx, reg);
+        int reg = regs.get(currentThread).removeFrom(ctx.expr());
+        regs.get(currentThread).put(ctx, reg);
 
         // add branch operation at the end of while loop
         int brnch = -(instrcount - startWhile) + 1;
@@ -224,21 +268,107 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
     @Override
     public Op visitForkStat(ForkStatContext ctx) {
-        return null;
+        threadCount++;
+
+		int startFork = instrcount; // index of branch
+        Op branch = opGen("Branch", "regSprID", "Rel " + 4);
+        program.addOp(branch);
+
+        int loadPos = instrcount;
+		// reserved: Load (ImmValue XX) regX
+
+        int reg = nextReg(ctx);
+        int sharedMemoryAddress = 0; // TODO: fix
+        Op writeInstr = opGen("WriteInstr", toReg(reg), "DirAddr " + sharedMemoryAddress);
+        program.addOp(writeInstr);
+
+        int jumpPos = instrcount + 1;
+        // reserved: Jump (Abs XX)
+
+        // begin waiting loop:
+        Op readInstr = opGen("ReadInstr", "IndAddr regSprID");
+        program.addOp(readInstr);
+
+        int reg2 = nextReg(ctx);
+        Op receive = opGen("Receive", toReg(reg2));
+        program.addOp(receive);
+
+        int reg3 = nextReg(ctx);
+        Op compEq = opGen("Compute", "Equal", toReg(reg2), "reg0", toReg(reg3));
+        program.addOp(compEq);
+
+        Op branch2 = opGen("Branch", toReg(reg3), "Rel (-3)");
+        program.addOp(branch2);
+
+        Op jump2 = opGen("Jump", "Ind " + toReg(reg2));
+        program.addOp(jump2);
+
+        // Load at the second instruction of fork (after branch)
+        int loadIndex = instrcount + 2;
+        Op load = opGen("Load", "ImmValue " + loadIndex, toReg(nextReg(ctx)));
+        program.insertOp(loadPos, load);
+
+        visit(ctx.block()); // block in the fork (sprockell 1)
+
+        // EndProg at the end of sprockell 1 fork
+        program.addOp(opGen("EndProg"));
+
+        // Jump to sprockell 0 part (before the waiting loop)
+        int jumpIndex = instrcount + 1;
+        Op jump = opGen("Jump", "Abs " + jumpIndex);
+        program.insertOp(jumpPos, jump);
+
+        return branch;
     }
 
     @Override
     public Op visitJoinStat(JoinStatContext ctx) {
-        return null;
+        // joins all threads currently active
+
+        String reg = toReg(nextReg(ctx));
+        Op result = null;
+        if (unjoinedForks.isEmpty()) {
+            addError(ctx, "There are no open threads other than Sprockell 0 (main)");
+        } else {
+            result = joinLoop(reg, unjoinedForks.get(0));
+        }
+
+        for (int i = 1; i < threadCount; i++) {
+            joinLoop(reg, unjoinedForks.get(i));
+        }
+
+        if (threadCount > maxThreads) {
+            maxThreads = threadCount;
+            threadCount = 0;
+        }
+
+        return result;
+    }
+
+    /** Creates a join loop for a certain sprockell with a register. */
+    private Op joinLoop(String reg, int sprockell) {
+        Op readInstr = opGen("ReadInstr", "DirAddr " + sprockell);
+        program.addOp(readInstr);
+
+        Op receive = opGen("Receive", reg);
+        program.addOp(receive);
+
+        Op compute = opGen("Compute", "NEq", reg, "reg0", reg);
+        program.addOp(compute);
+
+        Op branch = opGen("Branch", reg, "Rel (-3)");
+        program.addOp(branch);
+
+        return readInstr;
     }
 	
 	@Override
 	public Op visitNotExpr(NotExprContext ctx) {
 		Op result = visit(ctx.expr());
 
-        int operand1 = regs.removeFrom(ctx.expr());
+        int operand1 = regs.get(currentThread).removeFrom(ctx.expr());
         int target = nextReg(ctx);
-        regs.put(ctx, target);
+        regs.get(currentThread).put(ctx, target);
 
 		if (ctx.not().MINUS() == null) {
 			Op compute = opGen("Compute", "Equal", toReg(operand1), "reg0", toReg(target));
@@ -255,13 +385,13 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr(0));
 		visit(ctx.expr(1));
 
-        int operand1 = regs.removeFrom(ctx.expr(0));
-        int operand2 = regs.removeFrom(ctx.expr(1));
+        int operand1 = regs.get(currentThread).removeFrom(ctx.expr(0));
+        int operand2 = regs.get(currentThread).removeFrom(ctx.expr(1));
 		switchReg(operand1);
 		switchReg(operand2);
 
         int target = nextReg(ctx);
-        regs.put(ctx, target);
+        regs.get(currentThread).put(ctx, target);
 
 		String op;
 		if (ctx.multOp().MULT() == null) {
@@ -280,13 +410,13 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr(0));
 		visit(ctx.expr(1));
 
-        int op1 = regs.removeFrom(ctx.expr(0));
-        int op2 = regs.removeFrom(ctx.expr(1));
+        int op1 = regs.get(currentThread).removeFrom(ctx.expr(0));
+        int op2 = regs.get(currentThread).removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
 
         int target = nextReg(ctx);
-        regs.put(ctx, target);
+        regs.get(currentThread).put(ctx, target);
 
 		String op;
 		if (ctx.plusOp().PLUS() == null) {
@@ -304,12 +434,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	public Op visitCompExpr(CompExprContext ctx) {
 		visit(ctx.expr(0));
 		visit(ctx.expr(1));
-        int op1 = regs.removeFrom(ctx.expr(0));
-        int op2 = regs.removeFrom(ctx.expr(1));
+        int op1 = regs.get(currentThread).removeFrom(ctx.expr(0));
+        int op2 = regs.get(currentThread).removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
         int target = nextReg(ctx);
-        regs.put(ctx, target);
+        regs.get(currentThread).put(ctx, target);
 
 		String op = "";
 		if (ctx.compOp().getText().equalsIgnoreCase("==")) {
@@ -336,12 +466,12 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op result = visit(ctx.expr(0));
 		visit(ctx.expr(1));
 
-        int op1 = regs.removeFrom(ctx.expr(0));
-        int op2 = regs.removeFrom(ctx.expr(1));
+        int op1 = regs.get(currentThread).removeFrom(ctx.expr(0));
+        int op2 = regs.get(currentThread).removeFrom(ctx.expr(1));
 		switchReg(op1);
 		switchReg(op2);
         int target = nextReg(ctx);
-        regs.put(ctx, target);
+        regs.get(currentThread).put(ctx, target);
 
 		String op;
 		if (ctx.boolOp().AND() != null) {
@@ -358,18 +488,30 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	@Override
 	public Op visitParExpr(ParExprContext ctx) {
         Op result = visit(ctx.expr());
-        int reg = regs.removeFrom(ctx.expr());
-		regs.put(ctx, reg);
+        int reg = regs.get(currentThread).removeFrom(ctx.expr());
+		regs.get(currentThread).put(ctx, reg);
 		return result;
 	}
 	
 	@Override
 	public Op visitVarExpr(VarExprContext ctx) {
 		int reg = nextReg(ctx);
-        int offset = this.checkResult.getOffset(ctx);
-		Op result = opGen("Load", "DirAddr " + offset, toReg(reg));
 
-        regs.put(ctx, reg);
+        int offset = 1;
+        String opCode = null;
+        if (checkResult.getGlobalOffset(ctx) != null) {
+            offset = this.checkResult.getGlobalOffset(ctx);
+            opCode = "ReadInstr";
+        } else if (checkResult.getOffset(ctx) != null) {
+            offset = this.checkResult.getOffset(ctx);
+            opCode = "Load";
+        } else {
+            addError(ctx, "The variable '%s' is undefined", ctx.getText());
+        }
+
+		Op result = opGen(opCode, "DirAddr " + offset, toReg(reg));
+
+        regs.get(currentThread).put(ctx, reg);
 		program.addOp(result);
 		return result;
 	}
@@ -380,7 +522,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		String value = "ImmValue " + ctx.getText();
 		Op result = opGen("Load", value, toReg(reg));
 
-        regs.put(ctx, reg);
+        regs.get(currentThread).put(ctx, reg);
 		program.addOp(result);
 		return result;
 	}
@@ -391,7 +533,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		String value = "ImmValue " + Utils.FALSE_VALUE;
         Op result = opGen("Load", value, toReg(reg));
 
-        regs.put(ctx, reg);
+        regs.get(currentThread).put(ctx, reg);
         program.addOp(result);
         return result;
     }
@@ -402,7 +544,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		String value = "ImmValue " + Utils.TRUE_VALUE;
         Op result = opGen("Load", value, toReg(reg));
 
-        regs.put(ctx, reg);
+        regs.get(currentThread).put(ctx, reg);
         program.addOp(result);
         return result;
     }

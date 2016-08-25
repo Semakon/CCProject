@@ -6,14 +6,20 @@ import java.util.Map;
 /** Class combining the information of a single scope level. */
 public class Scope {
 
-    /** Global offset of this scope.
+    /** Starting offset of this scope.
      * Used to calculate offsets of newly declared variables. */
     private int currentOffset;
+    /** Starting global offset of this scope.
+     * Used to calculate offsets of newly declared variables. */
+    private int currentGlobalOffset;
     /** Map from declared variables to their types. */
     private final Map<String, Type> types;
     /** Map from declared variables to their offset within the allocation
      * record of this scope. */
     private final Map<String, Integer> offsets;
+    /** Map from declared variables to their global offsets within the allocation
+     * record of this scope. */
+    private final Map<String, Integer> globalOffsets;
     /** This scope's level in the symbol table */
     private int level;
     /** This scope's id within its scope level */
@@ -23,17 +29,19 @@ public class Scope {
 
     /** Constructs the outer scope of a symbol table. */
     public Scope(int level, int levelId) {
-        this(1, level, levelId, null);
+        this(1, 0, level, levelId, null);
     }
 
     /** Constructs a fresh, initially empty scope. */
-    public Scope(int currentOffset, int level, int levelId, Scope parent) {
+    public Scope(int currentOffset, int currentGlobalOffset, int level, int levelId, Scope parent) {
         this.currentOffset = currentOffset;
+        this.currentGlobalOffset = currentGlobalOffset;
         this.level = level;
         this.levelId = levelId;
         this.parent = parent;
         this.types = new LinkedHashMap<>();
         this.offsets = new LinkedHashMap<>();
+        this.globalOffsets = new LinkedHashMap<>();
     }
 
     public Scope getParent() {
@@ -52,9 +60,18 @@ public class Scope {
         return currentOffset;
     }
 
+    public int getCurrentGlobalOffset() {
+        return currentGlobalOffset;
+    }
+
     /** Tests if a given identifier is declared in this scope. */
     public boolean contains(String id) {
-        return this.types.containsKey(id);
+        return this.offsets.containsKey(id);
+    }
+
+    /** Tests if a given global identifier is declared in this scope. */
+    public boolean containsGlobal(String id) {
+        return this.globalOffsets.containsKey(id);
     }
 
     /**
@@ -73,6 +90,22 @@ public class Scope {
         return result;
     }
 
+    /**
+     * Declares a global identifier with a given type, if the identifier
+     * is not yet in this scope.
+     * @return <code>true</code> if the identifier was added;
+     * <code>false</code> if it was already declared.
+     */
+    public boolean globalPut(String id, Type type) {
+        boolean result = !contains(id);
+        if (result) {
+            this.types.put(id, type);
+            this.globalOffsets.put(id, this.currentGlobalOffset);
+            this.currentGlobalOffset += type.getSize();
+        }
+        return result;
+    }
+
     /** Returns the type of a given (presumably declared) identifier. */
     public Type type(String id) {
         return this.types.get(id);
@@ -85,6 +118,11 @@ public class Scope {
      */
     public Integer offset(String id) {
         return this.offsets.get(id);
+    }
+
+    /** Returns the global offset of a given (presumably declared) identifier. */
+    public Integer globalOffset(String id) {
+        return this.globalOffsets.get(id);
     }
 
     public String toString() {

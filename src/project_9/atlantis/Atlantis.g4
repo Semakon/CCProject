@@ -9,30 +9,31 @@ block   : LBRACE (stat SEMI)+ RBRACE
         ;
 
 /* Statements */
-stat    : target ASS expr               #assStat
-        | type target (ASS expr)?       #declStat
+stat    : target ASS expr                   #assStat
+        | GLOBAL? type target (ASS expr)?   #declStat
         | IF expr THEN block
-          (ELSE block)?                 #ifStat
-        | WHILE expr DO block           #whileStat
-        | FORK block                    #forkStat
-        | JOIN                          #joinStat
+          (ELSE block)?                     #ifStat
+        | WHILE expr DO block               #whileStat
+        | FORK block                        #forkStat
+        | JOIN                              #joinStat
+        | LOCK block UNLOCK                 #lockStat
         ;
 
 /* Target variable */
-target  : VAR                           #varTarget
+target  : VAR                               #varTarget
         ;
 
 /* Expressions */
-expr    : not expr                      #notExpr
-        | expr multOp expr              #multExpr
-        | expr plusOp expr              #plusExpr
-        | expr compOp expr              #compExpr
-        | expr boolOp expr              #boolOpExpr
-        | LPAR expr RPAR                #parExpr
-        | VAR                           #varExpr
-        | NUM                           #numExpr
-        | FALSE                         #falseExpr
-        | TRUE                          #trueExpr
+expr    : not expr                          #notExpr
+        | expr multOp expr                  #multExpr
+        | expr plusOp expr                  #plusExpr
+        | expr compOp expr                  #compExpr
+        | expr boolOp expr                  #boolOpExpr
+        | LPAR expr RPAR                    #parExpr
+        | VAR                               #varExpr
+        | NUM                               #numExpr
+        | FALSE                             #falseExpr
+        | TRUE                              #trueExpr
         ;
 
 /* Negation */
@@ -51,8 +52,8 @@ compOp  : EQ | NE | GT | GE | LT | LE;
 boolOp  : AND | OR;
 
 /* Data types */
-type    : BOOLEAN                       #boolType
-        | INT                           #intType
+type    : BOOLEAN                           #boolType
+        | INT                               #intType
         ;
 
 /* Reserved keywords */
@@ -69,6 +70,9 @@ FALSE:      F A L S E;
 NOT:        N O T;
 FORK:       F O R K;
 JOIN:       J O I N;
+GLOBAL:     G L O B A L;
+LOCK:       L O C K;
+UNLOCK:     U N L O C K;
 
 /* Symbols */
 ASS:        '=';

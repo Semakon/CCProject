@@ -35,13 +35,13 @@ public class Op {
 		case "Receive":
 			receive(strings);
 			break;
-		case "Read":
+		case "ReadInstr":
 			read(strings);
 			break;
-		case "Testandset":
+		case "TestAndSet":
 			tas(strings);
 			break;
-		case "Write":
+		case "WriteInstr":
 			write(strings);
 			break;
 		case "Nop":
@@ -120,4 +120,5 @@ public class Op {
 		this.instr = "WriteInstr " + strings[0]
 				+ " (" + strings[1] + ")";
 	}
+
 }

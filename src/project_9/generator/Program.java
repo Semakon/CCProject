@@ -11,14 +11,16 @@ public class Program {
 
     /** List of operations that this program consists of. */
     private List<Op> operations;
+    /** Highest number of threads active at any time (not including the main thread) */
+    private int maxThreads;
 
     public Program() {
         operations = new ArrayList<>();
     }
 
-    /** Returns the list of operations. */
-    public List<Op> getOperations() {
-        return operations;
+    /** Sets maxThreads */
+    public void setMaxThreads(int maxThreads) {
+        this.maxThreads = maxThreads;
     }
 
     /**
@@ -36,6 +38,7 @@ public class Program {
      */
     public void addOp(Op op) {
     	operations.add(op);
+        System.out.println(this);
     }
 
     /**
@@ -61,6 +64,13 @@ public class Program {
             code.add("        , " + operations.get(i).getInstr());
         }
         code.add("       ]");
+        code.add("");
+
+        String progs = "";
+        for (int i = 0; i < maxThreads; i++) {
+            progs += ",prog";
+        }
+        code.add("demoTest = sysTest [prog" + progs + "]");
         return code;
     }
 
@@ -69,12 +79,12 @@ public class Program {
      * @return A string representation of this program.
      */
     public String toString() {
-    	String result = "program = [";
+    	String result = "\nprogram = [\n";
         for (Op op : operations) {
-            result += op.getInstr() + ", ";
+            result += op.getInstr() + ",\n";
         }
     	result = result.substring(0, result.length() - 2); // cut off ", "
-    	result += "]";
+    	result += "\n]";
     	return result;
     }
 
