@@ -39,6 +39,8 @@ public class TypeChecker extends AtlantisBaseListener {
             throw new ParseException(getErrors());
         }
         Utils.pr(table.toString());
+        // reserve shared memory for regSprID
+        table.addToGlobalOffsets(result.getThreadCount());
         return this.result;
     }
 

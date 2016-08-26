@@ -29,7 +29,7 @@ public class Scope {
 
     /** Constructs the outer scope of a symbol table. */
     public Scope(int level, int levelId) {
-        this(1, 0, level, levelId, null);
+        this(1, 1, level, levelId, null);
     }
 
     /** Constructs a fresh, initially empty scope. */
@@ -123,6 +123,14 @@ public class Scope {
     /** Returns the global offset of a given (presumably declared) identifier. */
     public Integer globalOffset(String id) {
         return this.globalOffsets.get(id);
+    }
+
+    /** Add a certain amount to all global offsets (to reserve regSprID in shared memory). */
+    public void addToGlobalOffset(int amount) {
+        for (String key : globalOffsets.keySet()) {
+            int x = globalOffsets.get(key);
+            globalOffsets.put(key, x + amount);
+        }
     }
 
     public String toString() {
