@@ -16,7 +16,7 @@ stat    : target ASS expr                   #assStat
         | WHILE expr DO block               #whileStat
         | FORK block                        #forkStat
         | JOIN                              #joinStat
-        | LOCK block                        #lockStat
+        | LOCK target block                 #lockStat
         ;
 
 /* Target variable */

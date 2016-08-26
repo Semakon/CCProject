@@ -101,7 +101,7 @@ public class Scope {
         if (result) {
             this.types.put(id, type);
             this.globalOffsets.put(id, this.currentGlobalOffset);
-            this.currentGlobalOffset += type.getSize();
+            this.currentGlobalOffset += type.getSize() * 2;
         }
         return result;
     }

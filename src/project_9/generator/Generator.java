@@ -386,8 +386,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
 	@Override
 	public Op visitLockStat(LockStatContext ctx) {
+		Op result = visit(ctx.target());
+
 		// lock
-		int shMemLoc = 0; // TODO: make variable specific
+		int shMemLoc = checkResult.getGlobalOffset(ctx.target()) + 1;
 		Op testAndSet = opGen("TestAndSet", "DirAddr " + shMemLoc);
 		program.addOp(testAndSet);
 
@@ -412,7 +414,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		Op write = opGen("WriteInstr", "reg0", "DirAddr " + shMemLoc);
 		program.addOp(write);
 
-		return testAndSet;
+		return result;
 	}
 	
 	@Override

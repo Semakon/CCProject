@@ -1,19 +1,23 @@
 program LockTest;
 
 {
-    global integer x = 5;
+    global integer x = 0;
+    global integer y = 10;
     fork {
-        lock {
-            x = x + 4;
+        lock x {
+            x = x + 5;
         };
     };
     fork {
-        lock {
-            x = x + 10;
+        lock y {
+            y = y + 10;
         };
     };
-    lock {
-        x = x - 3;
+    lock x {
+        x = x - 7;
+    };
+    lock y {
+        y = y - 15;
     };
     join;
 }
