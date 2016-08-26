@@ -71,6 +71,10 @@ public class CheckResult {
         return globalOffsets.get(ctx);
     }
 
+    public void addToGlobalOffset(int amount) {
+
+    }
+
     /** Increments the threadCount */
     public void incThreadCount() {
         this.threadCount++;

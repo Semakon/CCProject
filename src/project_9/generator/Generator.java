@@ -265,6 +265,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
     @Override
     public Op visitForkStat(ForkStatContext ctx) {
+		threadCount++;
+
         Op branch = opGen("Branch", "regSprID", "Rel " + 4);
         program.addOp(branch);
 
@@ -272,7 +274,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		// reserved: Load (ImmValue XX) regX
 
         int reg = nextReg(ctx);
-        int sharedMemoryAddress = 0; // TODO: fix
+        int sharedMemoryAddress = threadCount; // TODO: fix
         Op writeInstr = opGen("WriteInstr", toReg(reg), "DirAddr " + sharedMemoryAddress);
         program.addOp(writeInstr);
 
@@ -303,7 +305,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         program.insertOp(loadPos, load);
 
         // start fork's block
-        currentThread = ++threadCount;
+        currentThread = threadCount;
         visit(ctx.block());
 
         // Set this thread's regSprID to 0 (signal done)

@@ -125,14 +125,6 @@ public class Scope {
         return this.globalOffsets.get(id);
     }
 
-    /** Add a certain amount to all global offsets (to reserve regSprID in shared memory). */
-    public void addToGlobalOffset(int amount) {
-        for (String key : globalOffsets.keySet()) {
-            int x = globalOffsets.get(key);
-            globalOffsets.put(key, x + amount);
-        }
-    }
-
     public String toString() {
         return level + "-" + levelId + "=" + this.types.keySet().toString();
     }

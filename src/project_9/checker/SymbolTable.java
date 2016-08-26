@@ -149,13 +149,6 @@ public class SymbolTable {
         return max + 1;
     }
 
-    /** Add an amount to all global offsets in every scope (to reserve regSprID in shared memory). */
-    public void addToGlobalOffsets(int amount) {
-        for (Scope s : scopes) {
-            s.addToGlobalOffset(amount);
-        }
-    }
-
     public String toString() {
         return scopes.toString();
     }
