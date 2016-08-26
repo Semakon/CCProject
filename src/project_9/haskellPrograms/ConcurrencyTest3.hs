@@ -9,8 +9,8 @@ import Simulation
 prog :: [Instruction]
 prog = [
          -- Start program
-           Load (ImmValue 100) regA
-         , WriteInstr regA (DirAddr 0)     -- Stored in shared memory
+           Load (ImmValue 5) regA
+         , WriteInstr regA (DirAddr 2)     -- Stored in shared memory
          
          -- Fork
          , Branch regSprID (Rel 4)
@@ -27,20 +27,20 @@ prog = [
          , Jump (Ind regA)
          
          -- Sprockell 1 is sent here
-         , ReadInstr (DirAddr 0)
+         , ReadInstr (DirAddr 2)
          , Receive regA
-         , Load (ImmValue 150) regB
+         , Load (ImmValue 4) regB
          , Compute Add regA regB regA
-         , WriteInstr regA (DirAddr 0)
+         , WriteInstr regA (DirAddr 2)
          , WriteInstr reg0 (IndAddr regSprID)
          , EndProg
 
          -- Sprockell 0 is sent here
-         , ReadInstr (DirAddr 0)
+         , ReadInstr (DirAddr 2)
          , Receive regA
-         , Load (ImmValue 105) regB
+         , Load (ImmValue 3) regB
          , Compute Sub regA regB regA
-         , WriteInstr regA (DirAddr 0)
+         , WriteInstr regA (DirAddr 2)
          
          -- Join (Sprockell 1)
          , ReadInstr (DirAddr 1)

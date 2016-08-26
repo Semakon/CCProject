@@ -38,6 +38,10 @@ public class TypeChecker extends AtlantisBaseListener {
             Utils.pr(getErrors()); // shows all errors when Utils.DEBUG is true
             throw new ParseException(getErrors());
         }
+        // Set new global start offset
+        ReserveSharedMemory rsh = new ReserveSharedMemory(result.getThreadCount(), result);
+        new ParseTreeWalker().walk(rsh, tree);
+
         Utils.pr(table.toString());
         return this.result;
     }
@@ -147,6 +151,12 @@ public class TypeChecker extends AtlantisBaseListener {
             }
         }
 
+        if (table.lookupGlobalOffset(id) != null) {
+            setGlobalOffset(ctx, this.table.lookupGlobalOffset(id));
+        } else {
+            setOffset(ctx, this.table.lookupOffset(id));
+        }
+
         if (type == null) {
             // type undefined
             addError(ctx, String.format("Type of '%s' is undefined", id));
@@ -219,6 +229,7 @@ public class TypeChecker extends AtlantisBaseListener {
             Integer globalOffset = this.table.lookupGlobalOffset(id);
             if (globalOffset != null) {
                 setGlobalOffset(ctx, globalOffset);
+
             } else {
                 setOffset(ctx, this.table.lookupOffset(id));
             }

@@ -38,7 +38,7 @@ public class Program {
      */
     public void addOp(Op op) {
     	operations.add(op);
-        System.out.println(this);
+//        System.out.println(this);
     }
 
     /**

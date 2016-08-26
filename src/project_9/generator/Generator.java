@@ -28,6 +28,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
     private int threadCount = 0;
     /** Current generated thread */
     private int currentThread = 0;
+	/** Ensures only one Thread-wait-loop is produced. */
+	private boolean threadWait = true;
+	/** Absolute position of the Thread-wait-loop. */
+	private int waitLoopPos;
 	/** The outcome of the checker phase. */
 	private CheckResult checkResult;
 	/** Register count, used to generate fresh registers. */
@@ -51,8 +55,8 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         this.regCount = 5;
 
 		this.regs = new HashMap<>();
+		this.regsInUse = new HashMap<>();
         this.regs.put(currentThread, new ParseTreeProperty<Integer>());
-        this.regsInUse = new HashMap<>();
         this.regsInUse.put(currentThread, new boolean[regCount]);
 
 		this.errors = new ArrayList<>();
@@ -152,14 +156,14 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		String target = "DirAddr ";
         String opCode = "Store";
 
-        if (checkResult.getGlobalOffset(ctx) != null) {
+        if (checkResult.getGlobalOffset(ctx.target()) != null) {
             target += globalOffset(ctx.target());
             opCode = "WriteInstr";
-        } else if (checkResult.getOffset(ctx) != null) {
+        } else if (checkResult.getOffset(ctx.target()) != null) {
             target += offset(ctx.target());
-        }/* else {
+        } else {
             addError(ctx, "The variable '%s' is undefined", ctx.target().getText());
-        }*/
+        }
 
 		Op store = opGen(opCode, toReg(reg), target);
 
@@ -176,7 +180,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
             result = visit(ctx.expr());
             Integer reg = regs.get(currentThread).get(ctx.expr());
 
-            String target = "DirAddr ";
+            String target = "DirAddr "; //TODO: fix target (not necessarily here)
             String opCode;
 
             if (ctx.GLOBAL() != null) {
@@ -267,49 +271,68 @@ public class Generator extends AtlantisBaseVisitor<Op> {
     public Op visitForkStat(ForkStatContext ctx) {
 		threadCount++;
 
-        Op branch = opGen("Branch", "regSprID", "Rel " + 4);
-        program.addOp(branch);
+		int branchPos = instrcount;
+		// reserved: Branch regSprID (Abs XX)
 
-        int loadPos = instrcount;
+        int loadPos = instrcount + 1;
 		// reserved: Load (ImmValue XX) regX
 
         int reg = nextReg(ctx);
         int sharedMemoryAddress = threadCount; // TODO: fix
         Op writeInstr = opGen("WriteInstr", toReg(reg), "DirAddr " + sharedMemoryAddress);
         program.addOp(writeInstr);
+		switchReg(reg);
 
-        int jumpPos = instrcount + 1;
+        int jumpPos = instrcount + 2;
         // reserved: Jump (Abs XX)
 
-        // begin waiting loop:
-        Op readInstr = opGen("ReadInstr", "IndAddr regSprID");
-        program.addOp(readInstr);
+		// ensures only one thread-wait loop is created
+		if (threadWait) {
+			waitLoopPos = instrcount + 3;
 
-        int reg2 = nextReg(ctx);
-        Op receive = opGen("Receive", toReg(reg2));
-        program.addOp(receive);
+			// begin waiting loop:
+			Op readInstr = opGen("ReadInstr", "IndAddr regSprID");
+			program.addOp(readInstr);
 
-        int reg3 = nextReg(ctx);
-        Op compEq = opGen("Compute", "Equal", toReg(reg2), "reg0", toReg(reg3));
-        program.addOp(compEq);
+			int reg2 = nextReg(ctx);
+			Op receive = opGen("Receive", toReg(reg2));
+			program.addOp(receive);
 
-        Op branch2 = opGen("Branch", toReg(reg3), "Rel (-3)");
-        program.addOp(branch2);
+			int reg3 = nextReg(ctx);
+			Op compEq = opGen("Compute", "Equal", toReg(reg2), "reg0", toReg(reg3));
+			program.addOp(compEq);
 
-        Op jump2 = opGen("Jump", "Ind " + toReg(reg2));
-        program.addOp(jump2);
+			Op branch2 = opGen("Branch", toReg(reg3), "Rel (-3)");
+			program.addOp(branch2);
+
+			Op jump2 = opGen("Jump", "Ind " + toReg(reg2));
+			program.addOp(jump2);
+
+			switchReg(reg2);
+			switchReg(reg3);
+
+			threadWait = false;
+		}
+
+		// branch at the start of fork
+		Op branch = opGen("Branch", "regSprID", "Abs " + waitLoopPos);
+		program.insertOp(branchPos, branch);
 
         // Load at the second instruction of fork (after branch)
         int loadIndex = instrcount + 2;
-        Op load = opGen("Load", "ImmValue " + loadIndex, toReg(nextReg(ctx)));
-        program.insertOp(loadPos, load);
+        Op load = opGen("Load", "ImmValue " + loadIndex, toReg(reg));
+		program.insertOp(loadPos, load);
+
+		// set currentThread to this thread
+		currentThread = threadCount;
+		this.regs.put(currentThread, new ParseTreeProperty<Integer>());
+		this.regsInUse.put(currentThread, new boolean[regCount]);
 
         // start fork's block
-        currentThread = threadCount;
         visit(ctx.block());
 
         // Set this thread's regSprID to 0 (signal done)
-        program.addOp(opGen("WriteInstr", "reg0", "IndAddr regSprID")); //TODO: change regSprID
+        program.addOp(opGen("WriteInstr", "reg0", "IndAddr regSprID"));
         // EndProg at the end of sprockell 1 fork
         program.addOp(opGen("EndProg"));
 
@@ -318,6 +341,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         Op jump = opGen("Jump", "Abs " + jumpIndex);
         program.insertOp(jumpPos, jump);
 
+		unjoinedForks.add(currentThread);
+
+		// set current thread to main
         currentThread = 0;
         return branch;
     }
@@ -344,7 +370,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
     /** Creates a join loop for a certain sprockell with a register. */
     private Op joinLoop(String reg, int sprockell) {
         Op readInstr = opGen("ReadInstr", "DirAddr " + sprockell);
-        program.addOp(readInstr);
+		program.addOp(readInstr);
 
         Op receive = opGen("Receive", reg);
         program.addOp(receive);
@@ -353,10 +379,41 @@ public class Generator extends AtlantisBaseVisitor<Op> {
         program.addOp(compute);
 
         Op branch = opGen("Branch", reg, "Rel (-3)");
-        program.addOp(branch);
+		program.addOp(branch);
 
         return readInstr;
     }
+
+	@Override
+	public Op visitLockStat(LockStatContext ctx) {
+		// lock
+		int shMemLoc = 0; // TODO: make variable specific
+		Op testAndSet = opGen("TestAndSet", "DirAddr " + shMemLoc);
+		program.addOp(testAndSet);
+
+		int n = nextReg(ctx);
+		String reg = toReg(n);
+
+		Op receive = opGen("Receive", reg);
+		program.addOp(receive);
+
+		Op compute = opGen("Compute", "Equal", reg, "reg0", reg);
+		program.addOp(compute);
+
+		Op branch = opGen("Branch", reg, "Rel (-3)");
+		program.addOp(branch);
+
+		switchReg(n);
+
+		// block
+		visit(ctx.block());
+
+		// unlock
+		Op write = opGen("WriteInstr", "reg0", "DirAddr " + shMemLoc);
+		program.addOp(write);
+
+		return testAndSet;
+	}
 	
 	@Override
 	public Op visitNotExpr(NotExprContext ctx) {
@@ -451,7 +508,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		} else if (ctx.compOp().getText().equalsIgnoreCase("<>")) {
 			op = "NEq";
 		}
-		
+
 		Op compute = opGen("Compute", op, toReg(op1), toReg(op2), toReg(target));
 		program.addOp(compute);
 		return compute;
@@ -492,12 +549,14 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 	@Override
 	public Op visitVarExpr(VarExprContext ctx) {
 		int reg = nextReg(ctx);
+		boolean addReceive = false;
 
         int offset = 1;
         String opCode = null;
         if (checkResult.getGlobalOffset(ctx) != null) {
             offset = this.checkResult.getGlobalOffset(ctx);
             opCode = "ReadInstr";
+			addReceive = true;
         } else if (checkResult.getOffset(ctx) != null) {
             offset = this.checkResult.getOffset(ctx);
             opCode = "Load";
@@ -509,6 +568,9 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 
         regs.get(currentThread).put(ctx, reg);
 		program.addOp(result);
+		if (addReceive) {
+			program.addOp(opGen("Receive", toReg(reg)));
+		}
 		return result;
 	}
 	
@@ -527,10 +589,10 @@ public class Generator extends AtlantisBaseVisitor<Op> {
     public Op visitFalseExpr(FalseExprContext ctx) {
         int reg = nextReg(ctx);
 		String value = "ImmValue " + Utils.FALSE_VALUE;
-        Op result = opGen("Load", value, toReg(reg));
+		Op result = opGen("Load", value, toReg(reg));
 
         regs.get(currentThread).put(ctx, reg);
-        program.addOp(result);
+		program.addOp(result);
         return result;
     }
 

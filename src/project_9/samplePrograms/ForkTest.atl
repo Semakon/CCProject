@@ -5,6 +5,9 @@ program ForkTest;
     fork {
         x = x + 4;
     };
+    fork {
+        x = x + 10;
+    };
     x = x - 3;
     join;
 }

@@ -72,7 +72,7 @@ public class CheckResult {
     }
 
     public void addToGlobalOffset(int amount) {
-
+        // TODO: do something with this
     }
 
     /** Increments the threadCount */

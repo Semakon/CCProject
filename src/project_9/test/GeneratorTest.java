@@ -99,6 +99,17 @@ public class GeneratorTest {
         }
     }
 
+    /** Tests compiling of LockTest.atl */
+    @Test
+    public void lockTest() throws IOException, ParseException {
+        try {
+            test("LockTest");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
     /**
      * Prints a file with name <code>filename</code> and writes it to a haskell file.
      * @param filename The name of the file.
@@ -108,7 +119,6 @@ public class GeneratorTest {
     private void test(String filename) throws IOException, ParseException {
         Program prog = compile(filename);
 
-        System.out.println(prog.toString());
         for (String line : prog.generateCode(filename)) {
             System.out.println(line);
         }
