@@ -123,7 +123,7 @@ public class GeneratorTest {
             System.out.println(line);
         }
 
-//        Utils.toHaskellFile(prog, filename);
+        Utils.toHaskellFile(prog, filename);
     }
 
     /**

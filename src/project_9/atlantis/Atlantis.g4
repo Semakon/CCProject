@@ -72,7 +72,6 @@ FORK:       F O R K;
 JOIN:       J O I N;
 GLOBAL:     G L O B A L;
 LOCK:       L O C K;
-UNLOCK:     U N L O C K;
 
 /* Symbols */
 ASS:        '=';
