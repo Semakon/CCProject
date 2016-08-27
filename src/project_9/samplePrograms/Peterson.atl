@@ -1,0 +1,33 @@
+program Peterson;
+
+{
+    global boolean flag0 = false;
+    global boolean flag1 = false;
+    global integer turn;
+
+    fork {
+        flag0 = true;                   # P0 #
+        turn = 1;                       # P0_gate #
+        while (flag1 && turn == 1) do {
+            # busy wait #
+            integer x = 0;
+        };
+        # critical section #
+
+        # end of critical section #
+        flag0 = false;
+    };
+
+    flag1 = true;                       # P1 #
+    turn = 0;                           # P1_gate #
+    while (flag0 && turn == 0) do {
+        # busy wait #
+        integer x = 0;
+    };
+    # critical section #
+
+    # end of critical section #
+    flag1 = false;
+
+    join;
+}

@@ -110,6 +110,28 @@ public class GeneratorTest {
         }
     }
 
+    /** Tests compiling of BankingSystem.atl */
+    @Test
+    public void bankingSystemTest() throws IOException, ParseException {
+        try {
+            test("BankingSystem");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
+    /** Tests compiling of Peterson.atl */
+    @Test
+    public void petersonTest() throws IOException, ParseException {
+        try {
+            test("Peterson");
+        } catch (ParseException e) {
+            e.print();
+            fail("Program should've compiled, but didn't.");
+        }
+    }
+
     /**
      * Prints a file with name <code>filename</code> and writes it to a haskell file.
      * @param filename The name of the file.

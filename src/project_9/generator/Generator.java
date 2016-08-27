@@ -180,7 +180,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
             result = visit(ctx.expr());
             Integer reg = regs.get(currentThread).get(ctx.expr());
 
-            String target = "DirAddr "; //TODO: fix target (not necessarily here)
+            String target = "DirAddr ";
             String opCode;
 
             if (ctx.GLOBAL() != null) {
@@ -278,7 +278,7 @@ public class Generator extends AtlantisBaseVisitor<Op> {
 		// reserved: Load (ImmValue XX) regX
 
         int reg = nextReg(ctx);
-        int sharedMemoryAddress = threadCount; // TODO: fix
+        int sharedMemoryAddress = threadCount;
         Op writeInstr = opGen("WriteInstr", toReg(reg), "DirAddr " + sharedMemoryAddress);
         program.addOp(writeInstr);
 		switchReg(reg);

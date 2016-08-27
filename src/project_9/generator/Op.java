@@ -53,10 +53,6 @@ public class Op {
 		}
 	}
 	
-	public void setInstr(String instruc) {
-		this.instr = instruc;
-	}
-	
 	public String getInstr() {
 		return this.instr;
 	}
