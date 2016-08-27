@@ -3,7 +3,6 @@ package project_9.checker;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
-import project_9.Utils;
 
 /**
  * Author:  Martijn
@@ -69,10 +68,6 @@ public class CheckResult {
     /** Returns a global offset of the Parse Tree mapping of global offsets. */
     public Integer getGlobalOffset(ParseTree ctx) {
         return globalOffsets.get(ctx);
-    }
-
-    public void addToGlobalOffset(int amount) {
-        // TODO: do something with this
     }
 
     /** Increments the threadCount */

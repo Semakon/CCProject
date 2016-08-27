@@ -100,38 +100,6 @@ public class TypeTest {
         }
     }
 
-    /** Tests types of ForkTest.atl */
-    @Test
-    public void testFork() throws IOException {
-        try {
-            ParseTree tree = parse("ForkTest");
-            CheckResult result = check(tree);
-
-            //TODO: implement proper test
-
-            // expected behaviour
-        } catch (ParseException e) {
-            e.print();
-            fail("Should have parsed, but didn't.");
-        }
-    }
-
-    /** Tests types of GlobalTest.atl */
-    @Test
-    public void testGlobalTest() throws IOException {
-        try {
-            ParseTree tree = parse("GlobalTest");
-            CheckResult result = check(tree);
-
-            //TODO: implement proper test
-
-            // expected behaviour
-        } catch (ParseException e) {
-            e.print();
-            fail("Should have parsed, but didn't.");
-        }
-    }
-
     /** Tests types of BlocksFail.atl */
     @Test
     public void testBlocksFail() throws IOException {

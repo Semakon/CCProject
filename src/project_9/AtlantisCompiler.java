@@ -68,11 +68,6 @@ public class AtlantisCompiler {
         return this.generator.generate(tree, check(tree));
     }
 
-    /** Type checks a given Atlantis file. */
-    public CheckResult check(File file) throws ParseException, IOException {
-        return check(parse(file));
-    }
-
     /** Type checks a given Atlantis parse tree. */
     public CheckResult check(ParseTree tree) throws ParseException {
         return this.checker.check(tree);
